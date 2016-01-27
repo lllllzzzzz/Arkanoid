@@ -29,28 +29,30 @@ constexpr int countBricksX{11};
 constexpr int countBricksY{4};
 
 // Game constants
-//constexpr int numLivesDefault{2};
+constexpr int numLivesDefault{2};
 
 struct Circle
 {
     CircleShape shape;
-    float x() const noexcept      { return shape.getPosition().x; }
-    float y() const noexcept      { return shape.getPosition().y; }
-    float left() const noexcept   { return x() - shape.getRadius(); }
-    float right() const noexcept  { return x() + shape.getRadius(); }
-    float top() const noexcept    { return y() - shape.getRadius(); }
-    float bottom() const noexcept { return y() + shape.getRadius(); }
+    float x() const noexcept        { return shape.getPosition().x; }
+    float y() const noexcept        { return shape.getPosition().y; }
+    float left() const noexcept     { return x() - shape.getRadius(); }
+    float right() const noexcept    { return x() + shape.getRadius(); }
+    float top() const noexcept      { return y() - shape.getRadius(); }
+    float bottom() const noexcept   { return y() + shape.getRadius(); }
+    void setPos(int posX, int posY) { shape.setPosition(posX, posY); }
 };
 
 struct Rectangle
 {
     RectangleShape shape;
-    float x() const noexcept      { return shape.getPosition().x; }
-    float y() const noexcept      { return shape.getPosition().y; }
-    float left() const noexcept   { return x() - shape.getSize().x / 2.f; }
-    float right() const noexcept  { return x() + shape.getSize().x / 2.f; }
-    float top() const noexcept    { return y() - shape.getSize().y / 2.f; }
-    float bottom() const noexcept { return y() + shape.getSize().y / 2.f; }
+    float x() const noexcept        { return shape.getPosition().x; }
+    float y() const noexcept        { return shape.getPosition().y; }
+    float left() const noexcept     { return x() - shape.getSize().x / 2.f; }
+    float right() const noexcept    { return x() + shape.getSize().x / 2.f; }
+    float top() const noexcept      { return y() - shape.getSize().y / 2.f; }
+    float bottom() const noexcept   { return y() + shape.getSize().y / 2.f; }
+    void setPos(int posX, int posY) { shape.setPosition(posX, posY); }
 };
 
 struct Ball : public Circle
@@ -83,8 +85,6 @@ struct Ball : public Circle
         }
     }
 };
-
-
 
 struct Paddle : public Rectangle
 {
@@ -175,67 +175,92 @@ void testCollision(Brick& mBrick, Ball& mBall)
     }
 }
 
-bool testLoseLife(Ball& mBall)
+struct Game
 {
-    return (mBall.y() == windowHeight);
-}
-
-int main()
-{
-    //int numLives = numLivesDefault;
-
+    RenderWindow window{{windowWidth, windowHeight}, windowTitle};
     Ball ball{initialBallX, initialBallY};
     Paddle paddle{initialPaddleX, initialPaddleY};
-
     std::vector<Brick> bricks;
+    Text textLives;
+    int numLives{numLivesDefault};
 
-    for (int iX{0}; iX < countBricksX; iX++) {
-        for (int iY{0}; iY < countBricksY; iY++) {
-            bricks.emplace_back((iX + 1) * (brickWidth + 3) + 22,
-                (iY + 2) * (brickHeight + 3));
+    Game()
+    {
+        window.setFramerateLimit(framesPerSecond);
+
+        for (int iX{0}; iX < countBricksX; iX++) {
+            for (int iY{0}; iY < countBricksY; iY++) {
+                bricks.emplace_back((iX + 1) * (brickWidth + 3) + 22,
+                    (iY + 2) * (brickHeight + 3));
+            }
         }
     }
 
-    RenderWindow window{{windowWidth, windowHeight}, windowTitle};
-    window.setFramerateLimit(framesPerSecond);
+    void run()
+    {
+        while (!Keyboard::isKeyPressed(Keyboard::Key::Escape)) {
+            if (numLives == 0) {
+                reset();
+            }
 
-    // Main game loop
-    while (!Keyboard::isKeyPressed(Keyboard::Key::Escape)/* && numLives > 0*/) {
-        Event event;
-        while (window.pollEvent(event)) {
-            switch (event.type) {
-                case Event::Closed:
+            if ((ball.y() == windowHeight)) {
+                numLives--;
+                ball.setPos(initialBallX, initialBallY);
+                paddle.setPos(initialPaddleX, initialPaddleY);
+                //sleep(milliseconds(500));
+            }
+
+            window.clear(Color::Black);
+
+            Event event;
+            while (window.pollEvent(event)) {
+                if (event.type == Event::Closed) {
                     window.close();
                     break;
-                default:
-                    break;
+                }
+            }
+
+            ball.update();
+            paddle.update();
+
+            testCollision(paddle, ball);
+
+            for (auto& brick : bricks) {
+                testCollision(brick, ball);
+            }
+
+            // Lambda function to remove destroyed blocks from block vector
+            bricks.erase(remove_if(begin(bricks), end(bricks),
+                [](const Brick& mBrick) { return mBrick.destroyed; }), end(bricks));
+
+            window.draw(ball.shape);
+            window.draw(paddle.shape);
+            for (auto& brick : bricks) {
+                window.draw(brick.shape);
+            }
+
+            window.display();
+        }
+    }
+
+    void reset()
+    {
+        for (int iX{0}; iX < countBricksX; iX++) {
+            for (int iY{0}; iY < countBricksY; iY++) {
+                bricks.emplace_back((iX + 1) * (brickWidth + 3) + 22,
+                    (iY + 2) * (brickHeight + 3));
             }
         }
 
-        window.clear(Color::Black);
+        ball.setPos(initialBallX, initialBallY);
+        paddle.setPos(initialPaddleX, initialPaddleY);
 
-        ball.update();
-        paddle.update();
-
-        testCollision(paddle, ball);
-        //numLives -= testLoseLife(ball);
-
-        for (auto& brick : bricks) {
-            testCollision(brick, ball);
-        }
-
-        // Lambda function to remove destroyed blocks from block vector
-        bricks.erase(remove_if(begin(bricks), end(bricks),
-            [](const Brick& mBrick) { return mBrick.destroyed; }), end(bricks));
-
-        window.draw(ball.shape);
-        window.draw(paddle.shape);
-        for (auto& brick : bricks) {
-            window.draw(brick.shape);
-        }
-
-        window.display();
+        numLives = numLivesDefault;
     }
+};
 
+int main()
+{
+    Game{}.run();
     return 0;
 }
