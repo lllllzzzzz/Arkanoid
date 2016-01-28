@@ -19,19 +19,19 @@
 class Game
 {
 public:
-	Game(int frameRate, int maxLives);
-	~Game();
+    Game(int frameRate, int maxLives);
+    ~Game();
 
-	void runGame();
-	void newGame();
-	template <class T1, class T2>
-	bool isIntersecting(T1& mA, T2& mB);
-	void testCollision(Paddle& mPaddle, Ball& mBall);
-	void testCollision(Brick& mBrick, Ball& mBall);
+    void runGame();
+    void newGame();
+    template <class T1, class T2>
+    bool isIntersecting(T1& mA, T2& mB);
+    void testCollision(Paddle& mPaddle, Ball& mBall);
+    void testCollision(Brick& mBrick, Ball& mBall);
 
 private:
-	RenderWindow window{{750, 450}, "Arkanoid"};
-	Ball ball{initialBallX, initialBallY, ballRadius};
+    RenderWindow window{{750, 450}, "Arkanoid"};
+    Ball ball{initialBallX, initialBallY, ballRadius};
     Paddle paddle{initialPaddleX, initialPaddleY, paddleWidth, paddleHeight};
     std::vector<Brick> bricks;
     int numLives;
