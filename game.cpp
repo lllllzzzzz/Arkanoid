@@ -1,5 +1,5 @@
-#include "game.hpp"
 #include <iostream>
+#include "game.hpp"
 
 Game::Game(int frameRate, int maxLives)
 {
@@ -19,6 +19,38 @@ Game::Game(int frameRate, int maxLives)
 Game::~Game()
 {
 
+}
+
+void Game::pushState(GameState* state)
+{
+    if (!states.empty()) {
+        states.top()->Pause();
+    }
+    states.push(state);
+}
+
+void Game::popState()
+{
+    delete states.top();
+    states.pop();
+}
+
+GameState* Game::peekState()
+{
+    if (states.empty()) {
+        return nullptr;
+    }
+
+    return states.top();
+}
+
+void Game::changeState(GameState* state)
+{
+    if (!states.empty()) {
+        popState();
+    }
+
+    pushState(state);
 }
 
 void Game::runGame()
