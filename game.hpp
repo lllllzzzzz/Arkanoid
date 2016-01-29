@@ -2,7 +2,9 @@
 #define GAME_HPP
 
 #include <SFML/Audio.hpp>
+#include <stack>
 
+#include "gameState.hpp"
 #include "ball.hpp"
 #include "paddle.hpp"
 #include "brick.hpp"
@@ -24,12 +26,19 @@ public:
     Game(int frameRate, int maxLives);
     ~Game();
 
+    void pushState(GameState* state);
+    void popState();
+    GameState* peekState();
+    void changeState(GameState* state);
+
     void runGame();
     void newGame();
     template <class T1, class T2>
     bool isIntersecting(T1& mA, T2& mB);
     void testCollision(Paddle& mPaddle, Ball& mBall);
     void testCollision(Brick& mBrick, Ball& mBall);
+
+    std::stack<GameState*> states;
 
     SoundBuffer brickCollisionBuffer;
     Sound brickCollisionSound;
