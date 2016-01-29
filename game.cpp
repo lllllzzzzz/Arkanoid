@@ -1,7 +1,17 @@
 #include "game.hpp"
+#include <iostream>
 
 Game::Game(int frameRate, int maxLives)
 {
+    brickCollisionBuffer.loadFromFile("data\\sound\\brick_collision.wav");
+    brickCollisionSound.setBuffer(brickCollisionBuffer);
+
+    paddleCollisionBuffer.loadFromFile("data\\sound\\paddle_collision.wav");
+    paddleCollisionSound.setBuffer(paddleCollisionBuffer);
+
+    //backgroundMusic.openFromFile("data\\sound\\bgm.wav");
+    //backgroundMusic.play();
+
     window.setFramerateLimit(frameRate);
     numLives = maxLives;
 }
@@ -19,18 +29,19 @@ void Game::runGame()
         while (window.pollEvent(event)) {
             if (event.type == Event::Closed) {
                 window.close();
-                break;
             }
         }
 
         window.clear(Color::Black);
 
-        if (numLives == 0) {
+        //backgroundMusic.play();
+
+        if (!numLives) {
             newGame();
         }
 
         // Player has missed ball; lose a life and reset ball
-        if ((ball.top() >= initialPaddleY)) {
+        if (ball.top() >= initialPaddleY) {
             numLives--;
             ball.setPos(initialBallX, initialBallY);
             ball.setVelocity(-ballVelocity, -ballVelocity);
@@ -46,8 +57,16 @@ void Game::runGame()
         }
 
         // Lambda function to remove destroyed blocks from block vector
-        bricks.erase(remove_if(begin(bricks), end(bricks),
-            [](const Brick& mBrick) { return mBrick.isDestroyed; }), end(bricks));
+        bricks.erase(
+            remove_if(
+                begin(bricks),
+                end(bricks),
+                [](const Brick& mBrick) {
+                    return mBrick.isDestroyed;
+                }
+            ),
+            end(bricks)
+        );
 
         // Draw game objects
         window.draw(ball.shape);
@@ -89,8 +108,14 @@ void Game::testCollision(Paddle& mPaddle, Ball& mBall)
         return;
     }
 
+    paddleCollisionSound.play();
+
     int velocityX = (mBall.x() < mPaddle.x()) ? -ballVelocity : ballVelocity;
     int velocityY = -ballVelocity;
+
+    // Realistic paddle physics
+    //velocityX *= abs(mPaddle.x() - mBall.x()) / 20;
+
     mBall.setVelocity(velocityX, velocityY);
 }
 
@@ -99,6 +124,8 @@ void Game::testCollision(Brick& mBrick, Ball& mBall)
     if (!isIntersecting(mBrick, mBall)) {
         return;
     }
+
+    brickCollisionSound.play();
 
     mBrick.isDestroyed = true;
 
