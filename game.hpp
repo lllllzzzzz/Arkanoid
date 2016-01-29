@@ -1,19 +1,21 @@
 #ifndef GAME_HPP
 #define GAME_HPP
 
+#include <SFML/Audio.hpp>
+
 #include "ball.hpp"
 #include "paddle.hpp"
 #include "brick.hpp"
 
-#define windowWidth    750
-#define windowHeight   450
+#define windowWidth    770
+#define windowHeight   500
 #define initialBallX   (windowWidth - 64)
 #define initialBallY   (windowHeight / 2)
-#define ballRadius     8.0f
+#define ballRadius     6.0f
 #define initialPaddleX (windowWidth / 2)
-#define initialPaddleY (windowHeight - 25)
-#define paddleWidth    80
-#define paddleHeight   15
+#define initialPaddleY (windowHeight - 30)
+#define paddleWidth    85
+#define paddleHeight   10
 #define numLivesDefault 2
 
 class Game
@@ -29,8 +31,16 @@ public:
     void testCollision(Paddle& mPaddle, Ball& mBall);
     void testCollision(Brick& mBrick, Ball& mBall);
 
+    SoundBuffer brickCollisionBuffer;
+    Sound brickCollisionSound;
+
+    SoundBuffer paddleCollisionBuffer;
+    Sound paddleCollisionSound;
+
+    //Music backgroundMusic;
+
 private:
-    RenderWindow window{{750, 450}, "Arkanoid"};
+    RenderWindow window{{windowWidth, windowHeight}, "Arkanoid"};
     Ball ball{initialBallX, initialBallY, ballRadius};
     Paddle paddle{initialPaddleX, initialPaddleY, paddleWidth, paddleHeight};
     std::vector<Brick> bricks;
