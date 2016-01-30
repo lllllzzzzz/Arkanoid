@@ -4,41 +4,25 @@
 #include <SFML\Window.hpp>
 #include <SFML\Graphics.hpp>
 
-/*#include "circle.hpp"*/
+#include "circle.hpp"
 
-using namespace sf;
-
-// Window constants
-const std::string windowTitle{"Arkanoid"};
-constexpr int windowWidth{750};
-constexpr int windowHeight{450};
-constexpr int framesPerSecond{60};
-
-// Ball constants
-constexpr float ballRadius{8.0f};
-constexpr float ballVelocity{8.0f};
-constexpr int initialBallX{windowWidth - 64};
-constexpr int initialBallY{windowHeight - 64};
-
-class Ball/* : public Circle*/
+class Ball : public Circle
 {
 public:
-    Ball(float posX, float posY, int radius);
+    Ball(const float posX, const float posY, const float radius, sf::Color color);
     ~Ball();
 
-    float x() const noexcept;
-    float y() const noexcept;
-    float left() const noexcept;
-    float right() const noexcept;
-    float top() const noexcept;
-    float bottom() const noexcept;
+    void update(const int windowWidth, const int windowHeight);
+    void setVelocity(const int x, const int y);
+    void setPos(const float posX, const float posY);
 
-    void update();
-    void setVelocity(int x, int y);
-    void setPos(int posX, int posY);
+    const int ballVelocity{8.0f};
+    sf::Vector2f velocity{-ballVelocity, -ballVelocity};
+    const int initialPosX = 770 - 25;
+    const int initialPosY = 500 - 80;
 
-    CircleShape shape;
-    Vector2f velocity{-ballVelocity, -ballVelocity};
+private:
+    //const float ballVelocity{8.0f};
 };
 
 #endif // BALL_HPP
