@@ -20,17 +20,17 @@ void GameState::Resume()
 
 }
 
-void GameState::HandleEvents()
+void GameState::HandleEvents(GameEngine *game)
 {
 
 }
 
-void GameState::Update()
+void GameState::Update(GameEngine *game)
 {
 
 }
 
-void GameState::Draw()
+void GameState::Draw(GameEngine *game)
 {
 
 }
