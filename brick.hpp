@@ -6,12 +6,10 @@
 
 #include "rectangle.hpp"
 
-using namespace sf;
-
-constexpr int brickWidth{60};
-constexpr int brickHeight{20};
-constexpr int countBricksX{10};
-constexpr int countBricksY{4};
+constexpr int brickWidth{45};
+constexpr int brickHeight{15};
+constexpr int countBricksX{14};
+constexpr int countBricksY{8};
 
 class Brick : public Rectangle
 {
@@ -21,15 +19,10 @@ public:
 
     bool isDestroyed;
 
-    virtual float x();
-    virtual float y();
-    virtual float left();
-    virtual float right();
-    virtual float top();
-    virtual float bottom();
-
 private:
-    Vector2f velocity;
+    sf::Vector2f velocity;
+    //Texture texture;
+    //Sprite sprite;
 };
 
 #endif // BRICK_HPP
