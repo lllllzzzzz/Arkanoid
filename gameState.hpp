@@ -1,7 +1,9 @@
 #ifndef GAME_STATE_HPP
 #define GAME_STATE_HPP
 
-#include <SFML/Audio.hpp>
+#include "..\stateman\gameEngine.hpp"
+
+class GameEngine;
 
 class GameState
 {
@@ -9,14 +11,12 @@ public:
     GameState();
     ~GameState();
 
-    void Pause();
-    void Resume();
+    virtual void Pause() = 0;
+    virtual void Resume() = 0;
 
-    void HandleEvents();
-    void Update();
-    void Draw();
-
-private:
+    virtual void HandleEvents(GameEngine *game) = 0;
+    virtual void Update(GameEngine *game) = 0;
+    virtual void Draw(GameEngine *game) = 0;
 };
 
 #endif // GAME_STATE_HPP
