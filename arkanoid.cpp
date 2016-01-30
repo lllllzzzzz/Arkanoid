@@ -1,22 +1,29 @@
 #include <cassert>
-
 #include <SFML\Window.hpp>
 #include <SFML\Graphics.hpp>
 
-#include "game.hpp"
-#include "ball.hpp"
-#include "paddle.hpp"
-#include "brick.hpp"
+#include "stateman\gameEngine.hpp"
+#include "states\playState.hpp"
+#include "states\menuState.hpp"
 
+constexpr int windowWidth{770};
+constexpr int windowHeight{500};
 constexpr int framesRate{60};
 constexpr int numLives{2};
 
-using namespace sf;
-
 int main()
 {
-    Game game{framesRate, numLives};
-    game.newGame();
-    game.runGame();
+    GameEngine game{windowWidth, windowHeight, framesRate, false};
+
+    // Enter Play Game state at startup
+    game.changeState(PlayState::Instance());
+
+    // Game engine loop
+    while (game.isRunning()) {
+        game.HandleEvents();
+        game.Update();
+        game.Draw();
+    }
+
     return 0;
 }
