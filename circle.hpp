@@ -1,10 +1,7 @@
 #ifndef CIRCLE_HPP
 #define CIRCLE_HPP
 
-#include <SFML\Window.hpp>
 #include <SFML\Graphics.hpp>
-
-using namespace sf;
 
 class Circle
 {
@@ -12,14 +9,14 @@ public:
     Circle();
     ~Circle();
 
-    CircleShape shape;
+    virtual float x() const noexcept;
+    virtual float y() const noexcept;
+    virtual float left() const noexcept;
+    virtual float right() const noexcept;
+    virtual float top() const noexcept;
+    virtual float bottom() const noexcept;
 
-    float x() const noexcept;
-    float y() const noexcept;
-    float left() const noexcept;
-    float right() const noexcept;
-    float top() const noexcept;
-    float bottom() const noexcept;
+    sf::CircleShape shape;
 };
 
 #endif // CIRCLE_HPP
