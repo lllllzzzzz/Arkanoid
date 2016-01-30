@@ -6,27 +6,18 @@
 
 #include "rectangle.hpp"
 
-using namespace sf;
-
 class Paddle : public Rectangle
 {
 public:
-    Paddle(float posX, float posY, int w, int h);
+    Paddle(float posX, float posY, int width, int height, sf::Color color);
     ~Paddle();
 
-    virtual float x();
-    virtual float y();
-    virtual float left();
-    virtual float right();
-    virtual float top();
-    virtual float bottom();
-
     void update();
-    void setPos(int posX, int posY);
+    void setPos(const int posX, const int posY);
 
 private:
+    sf::Vector2f velocity;
     const int paddleVelocity{10.0f};
-    Vector2f velocity;
 };
 
 #endif // PADDLE_HPP
