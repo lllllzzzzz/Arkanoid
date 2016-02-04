@@ -5,10 +5,13 @@
 //#include <chrono>
 
 #include "gameState.hpp"
+#include "..\hud\hud.hpp"
 #include "..\objects\ball.hpp"
 #include "..\objects\paddle.hpp"
 #include "..\objects\brick.hpp"
 #include "..\objects\brickGrid.hpp"
+#include "..\objects\powerup.hpp"
+//#include "..\objects\powerupExtraLife.hpp"
 
 class PlayState : public GameState
 {
@@ -23,65 +26,120 @@ public:
     void Update(GameEngine *game);
     void Draw(GameEngine *game);
 
-    void newGame();
+    void loadResources();
+    void newGame(GameEngine *game);
     void generateNewBrickGrid(const int numBricksX, const int numBricksY, const int width, const int height);
+    void playBrickGridAnimation(GameEngine *game, const int numBricksX, const int numBricksY);
+    bool allBricksVisible() const noexcept;
+    void loadNextLevel();
+    void setupBackground();
+
+    bool isGameRunning() const noexcept { return m_isGameRunning; }
+    void pauseGame() { m_isGameRunning = false; }
+    void resumeGame() { m_isGameRunning = true; }
+
+    inline bool isSoundEnabled() const noexcept { return m_isSoundEnabled; }
+    inline void enableSound() { m_isSoundEnabled = true; }
+    inline void disableSound() { m_isSoundEnabled = false; }
+    inline bool isPlayerPlaying() { return m_isPlayerPlaying; }
+    inline void playerStartPlaying() { m_isPlayerPlaying = true; }
+    inline void playerStopPlaying() { m_isPlayerPlaying = false; }
+
     template <class T1, class T2>
     bool isIntersecting(T1& mA, T2& mB);
     void testCollision(Paddle& mPaddle, Ball& mBall);
     void testCollision(Brick& mBrick, Ball& mBall);
-
-    const bool allBricksVisible();
+    void testCollision(Paddle& mPaddle, Powerup& mPowerup);
 
     static PlayState* Instance() {
         return &m_PlayState;
     }
 
+    //std::chrono::high_resolution_clock::timePoint1;
+    //std::chrono::high_resolution_clock::timePoint2;
+
     sf::SoundBuffer brickCollisionBuffer;
     sf::Sound brickCollisionSound;
     sf::SoundBuffer paddleCollisionBuffer;
     sf::Sound paddleCollisionSound;
+    sf::SoundBuffer newGameBuffer;
+    sf::Sound newGameSound;
     sf::SoundBuffer loseLifeBuffer;
     sf::Sound loseLifeSound;
-    //Music backgroundMusic;
+    sf::SoundBuffer gainPowerupBuffer;
+    sf::Sound gainPowerupSound;
+    sf::Music backgroundMusic;
 
-    //std::chrono::high_resolution_clock::timePoint1;
-    //std::chrono::high_resolution_clock::timePoint2;
+    sf::Texture textureBrick;
+    sf::Texture texturePaddle;
+    sf::Texture textureBall;
+    sf::Texture texturePowerup;
+    sf::Texture textureBorderSide;
+    sf::Texture textureBorderTop;
+    sf::Texture textureBorderCornerLeft;
+    sf::Texture textureBorderCornerRight;
+    sf::Texture textureShieldLeft;
+    sf::Texture textureShieldRight;
 
 private:
     static PlayState m_PlayState;
 
-    static const int initialBallX;
-    static const int initialBallY;
-    static const float ballRadius;
-    static const int initialPaddleX;
-    static const int initialPaddleY;
-    static const int paddleWidth;
-    static const int paddleHeight;
-    static const int numLivesDefault;
-    static const int countBricksX;
-    static const int countBricksY;
-    static const int brickWidth;
-    static const int brickHeight;
+    bool m_isPlayerPlaying;
+    bool m_isSoundEnabled;
+    bool m_isGameRunning{true};
 
-    //Ball ball{initialBallX, initialBallY, ballRadius, sf::Color(255, 255, 255)};
-    std::vector<Ball> balls;
-    Paddle paddle{initialPaddleX, initialPaddleY, paddleWidth, paddleHeight, sf::Color(255, 255, 255)};
-    std::vector<Brick> bricks;
-    //BrickGrid brickGrid;
     int numLives;
+    int level;
+    int playerScore;
+    int highScore;
+
+    Hud hud;
+    Paddle paddle;
+    std::vector<Ball> balls;
+    std::vector<Brick> bricks;
+    std::vector<Powerup> powerups;
+    //BrickGrid brickGrid;
+
+    sf::RectangleShape borderTop;
+    sf::RectangleShape borderLeft;
+    sf::RectangleShape borderRight;
+    sf::RectangleShape borderCornerLeft;
+    sf::RectangleShape borderCornerRight;
+    sf::RectangleShape shieldLeft;
+    sf::RectangleShape shieldRight;
+    sf::RectangleShape shadowTop;
+    sf::RectangleShape shadowLeft;
 
     /*float lastFt;
     float currentSlice;
     static const float ftStep;
     static const float ftSlice;*/
 
-    sf::Text str;
-    sf::Font font;
+    static const int initBallX;
+    static const int initBallY;
+    static const float ballRadius;
+    static const sf::Color ballColour;
 
-    int playerScore;
-    int highScore;
+    static const int initPaddleX;
+    static const int initPaddleY;
+    static const int paddleWidth;
+    static const int paddleHeight;
+    static const sf::Color paddleColour;
 
-    bool soundEnabled;
+    static const int countBricksX;
+    static const int countBricksY;
+    static const int brickWidth;
+    static const int brickHeight;
+
+    static const int powerupWidth;
+    static const int powerupHeight;
+    static const sf::Color powerupColour;
+
+    static const int ballPoints;
+
+    static const int numLivesDefault;
+
+    static const int powerupProbability;
 };
 
 #endif // PLAY_STATE_HPP
