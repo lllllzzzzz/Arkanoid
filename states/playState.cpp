@@ -1,9 +1,9 @@
 #include "..\stateman\gameEngine.hpp"
 #include "playState.hpp"
-#include "menuState.hpp"
+//#include "menuState.hpp"
 
 #include <iostream>
-#include <chrono>
+//#include <chrono>
 
 #ifdef _WIN32
 //#include <windows.h>
@@ -14,9 +14,6 @@
 
 const int PlayState::initPaddleX = 480 / 2;
 const int PlayState::initPaddleY = 620 - 70;
-const int PlayState::paddleWidth = 70;
-const int PlayState::paddleHeight = 12;
-const sf::Color PlayState::paddleColour = sf::Color(255, 255, 255);
 
 const int PlayState::initBallX = 620 - 64;
 const int PlayState::initBallY = 580 - 64;
@@ -40,23 +37,25 @@ const int PlayState::powerupProbability = 25;
 
 PlayState PlayState::m_PlayState;
 
+//using namespace Arkanoid;
+
 PlayState::PlayState() :
     m_isSoundEnabled(true),
     highScore(0),
     numLives(0),
     level(1),
-    m_isPlayerPlaying(false),
-    paddle(initPaddleX, initPaddleY, paddleWidth, paddleHeight, paddleColour/*, &texturePaddle*/)
+    m_isPlayerPlaying(true),
+    paddle(/*initPaddleX, initPaddleY, paddleWidth, paddleHeight, paddleColour*/)
     //brickGrid(countBricksX, countBricksY, brickWidth, brickHeight)
     //lastFt{0.f},
     //currentSlice{0.f}
 {
-    //std::cout << "PlayState constructor" << std::endl;
+    std::cout << "PlayState constructor" << std::endl;
 
     //newGame();
 
-    loadResources();
-    setupBackground();
+    //loadResources();
+    //setupBackground();
 
     /*lastFt = 0.f;
     currentSlice = 0.f;*/
@@ -65,6 +64,19 @@ PlayState::PlayState() :
 }
 
 PlayState::~PlayState()
+{
+
+}
+
+void PlayState::Init(GameEngine *game)
+{
+    LoadResources(game);
+    LoadObjects();
+    hud.Init(game);
+    paddle.Init(game);
+}
+
+void PlayState::Cleanup(GameEngine *game)
 {
 
 }
@@ -88,38 +100,32 @@ void PlayState::HandleEvents(GameEngine *game)
 
     // Poll window events, required so player can interact with game window
     sf::Event event;
-    while (game->window.pollEvent(event)) {
+    while (game->getWindow().pollEvent(event)) {
         if (event.type == sf::Event::Closed) {
-            game->window.close();
-        } //else if (event.type == sf::Event::KeyPressed && event.keyCode == sf::Keyboard::Key::Escape) {
-            //game->pushState(new MenuState());
-        //}
-    }
-
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
-        /*if (isGameRunning()) {
+            game->getWindow().close();
+        } else if (event.type == sf::Event::LostFocus) {
             pauseGame();
-        } else {
+        } else if (event.type == sf::Event::GainedFocus) {
             resumeGame();
-        }*/
-
-        // TODO: IMPLEMENT DEBOUNCING
-        pauseGame();
-    }
-
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)) {
-        /*if (isGameRunning()) {
-            pauseGame();
-        } else {
-            resumeGame();
-        }*/
-
-        // TODO: IMPLEMENT DEBOUNCING
-        resumeGame();
+        }
     }
 
     if (!isGameRunning()) {
         return;
+    }
+
+    // Accept player input
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
+        game->Quit();
+    } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
+        game->pushState(/*PausedState::Instance()*/new PausedState());
+    } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) {
+        if (balls.size() == 1) {
+            if (!balls.front().isLaunched()) {
+                balls.front().launch();
+                balls.front().setVelocity(0, -balls.front().getVelocity());
+            }
+        }
     }
 
     if (!numLives) {
@@ -128,57 +134,6 @@ void PlayState::HandleEvents(GameEngine *game)
 
     if (bricks.empty()) {
         loadNextLevel();
-    }
-
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
-            //game->changeState(new MenuState());
-            //game->pushState(new MenuState());
-            game->Quit();
-        /*} else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)) {
-            game->Quit();*/
-        }
-
-    if (isPlayerPlaying()) {
-        // Accept player input
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
-            //game->changeState(new MenuState());
-            //game->pushState(new MenuState());
-            game->Quit();
-        /*} else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)) {
-            game->Quit();*/
-        } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) {
-            if (balls.size() == 1) {
-                if (!balls.front().isLaunched()) {
-                    balls.front().launch();
-                    balls.front().setVelocity(0, -balls.front().getVelocity());
-                }
-            }
-        }
-    } else {
-        // AI
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)) {
-            playerStartPlaying();
-            paddle.setVelocity(8);
-            newGame(game);
-        }
-
-        if (!isPlayerPlaying()) {
-            for (auto &ball : balls) {
-                if (!ball.isLaunched()) {
-                    ball.launch();
-                }
-
-                if (/*ball.right() < paddle.left()*/ball.right() < paddle.x() - brickWidth / 2) {
-                    if (paddle.left() > 25) {
-                        paddle.moveLeft();
-                    }
-                } else if (/*ball.left() > paddle.right()*/ball.left() > paddle.x() + brickWidth / 2) {
-                    if (paddle.right() < 455) {
-                        paddle.moveRight();
-                    }
-                }
-            }
-        }
     }
 
     // Player has missed ball; lose a life and reset ball
@@ -207,7 +162,7 @@ void PlayState::HandleEvents(GameEngine *game)
     }
 
     // Perform collision detection between all balls and bricks
-    // O(M*N) algorithm
+    // O(N*M) algorithm
     for (auto& ball : balls) {
         testCollision(paddle, ball);
         for (auto& brick : bricks) {
@@ -223,7 +178,7 @@ void PlayState::HandleEvents(GameEngine *game)
     //auto ftSeconds(ft / 1000.f);
     //auto fps(1.f / ftSeconds);
 
-    //game->window.setTitle(
+    //game->getWindow().setTitle(
     //    "FT: " + std::to_string(ft) + "\tFPS: " + to_string(fps));
 }
 
@@ -280,28 +235,14 @@ void PlayState::Update(GameEngine *game)
     //}
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::F)) {
-        //std::cout << "New ball" << std::endl;
         balls.back().launch();
         balls.emplace_back(paddle.x() - balls.back().getRadius() / 2, paddle.y() - 20, ballRadius, ballColour, textureBall);
         balls.back().launch();
         balls.back().setVelocity(0, -32);
-
-        /*if (paddle.getWidth() < 430) {
-            paddle.setSize(paddle.getWidth() + 10, paddleHeight);
-            paddle.setPos(paddle.x() + 0, paddle.y());
-            paddle.shape.setOrigin(paddle.getWidth() / 2, paddle.getHeight() / 2);
-            balls.front().setPos(balls.front().x() - 0, balls.front().y());
-        }*/
-
-    //}
-    //playerScore += 5;
     }
 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::G)) {
-            //std::cout << "New ball" << std::endl;
-            bricks.clear();
-        //}
-        //playerScore += 5;
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::G)) {
+        bricks.clear();
     }
 }
 
@@ -313,49 +254,52 @@ void PlayState::Draw(GameEngine *game)
         return;
     }
 
-    game->window.clear(sf::Color(0, 0, 98));
+    game->getWindow().clear(sf::Color(0, 0, 98));
 
-    game->window.draw(shadowTop);
-    game->window.draw(shadowLeft);
-    game->window.draw(borderTop);
-    game->window.draw(borderLeft);
-    game->window.draw(borderCornerLeft);
-    game->window.draw(borderCornerRight);
-    game->window.draw(shieldLeft);
-    //game->window.draw(shieldRight);
-    /*game->window.draw(borderRight);*/
+    // Draw background
+    game->getWindow().draw(shadowTop);
+    game->getWindow().draw(shadowLeft);
+    game->getWindow().draw(borderTop);
+    game->getWindow().draw(borderLeft);
+    game->getWindow().draw(borderCornerLeft);
+    game->getWindow().draw(borderCornerRight);
+    game->getWindow().draw(shieldLeft);
+    //game->getWindow().draw(shieldRight);
+    /*game->getWindow().draw(borderRight);*/
 
     // Draw bricks
     for (auto& brick : bricks) {
         if (brick.isVisible()) {
-            game->window.draw(brick.shape);
-            game->window.draw(brick.shadow);
+            game->getWindow().draw(brick.shape);
+            game->getWindow().draw(brick.shadow);
         }
     }
 
     // Draw balls
     for (auto& ball : balls) {
         if (!ball.isDestroyed()) {
-            game->window.draw(ball.shadow);
-            game->window.draw(ball.shape);
+            game->getWindow().draw(ball.shadow);
+            game->getWindow().draw(ball.shape);
         }
     }
 
     // Draw paddle
-    game->window.draw(paddle.shadow);
-    game->window.draw(paddle.shape);
+    game->getWindow().draw(paddle.shadow);
+    game->getWindow().draw(paddle.shape);
 
-    game->window.draw(borderRight);
-    game->window.draw(shieldRight);
+    // Draw background
+    game->getWindow().draw(borderRight);
+    game->getWindow().draw(shieldRight);
 
     // Draw powerups
     for (auto& powerup : powerups) {
-        game->window.draw(powerup.shape);
+        game->getWindow().draw(powerup.shape);
     }
 
-    hud.displayHud(&game->window, playerScore, highScore, numLives, level, isPlayerPlaying());
+    // Draw HUD
+    hud.displayHud(&game->getWindow(), playerScore, highScore, numLives, level, isPlayerPlaying());
 
-    game->window.display();
+    game->getWindow().display();
 
     /*timePoint2 = std::chrono::high_resolution_clock::now();
     auto elapsedTime(timePoint2 - timePoint1);
@@ -364,73 +308,6 @@ void PlayState::Draw(GameEngine *game)
                      .count()};
 
     lastFt = ft;*/
-}
-
-void PlayState::loadResources()
-{
-    // Load sound resources
-    if (!brickCollisionBuffer.loadFromFile("data\\sound\\brick_collision.wav")) {
-        #ifdef _WIN32
-        //MessageBox(NULL, "Error loading file: brick_collision.wav!", "Arkanoid Error", MB_OK);
-        #endif
-    }
-    brickCollisionSound.setBuffer(brickCollisionBuffer);
-
-    if (!paddleCollisionBuffer.loadFromFile("data\\sound\\paddle_collision.wav")) {
-        #ifdef _WIN32
-        //MessageBox(NULL, "Error loading file: paddle_collision.wav!", "Arkanoid Error", MB_OK);
-        #endif
-    }
-    paddleCollisionSound.setBuffer(paddleCollisionBuffer);
-
-    if (!newGameBuffer.loadFromFile("data\\sound\\new_game.wav")) {
-        #ifdef _WIN32
-        //MessageBox(NULL, "Error loading file: new_game.wav!", "Arkanoid Error", MB_OK);
-        #endif
-    }
-    newGameSound.setBuffer(newGameBuffer);
-
-    if (!gainPowerupBuffer.loadFromFile("data\\sound\\gain_powerup.wav")) {
-        #ifdef _WIN32
-        //MessageBox(NULL, "Error loading file: gain_powerup.wav!", "Arkanoid Error", MB_OK);
-        #endif
-    }
-    gainPowerupSound.setBuffer(gainPowerupBuffer);
-
-    if (!loseLifeBuffer.loadFromFile("data\\sound\\lose_life.wav")) {
-        #ifdef _WIN32
-        //MessageBox(NULL, "Error loading file: gain_powerup.wav!", "Arkanoid Error", MB_OK);
-        #endif
-    }
-    loseLifeSound.setBuffer(loseLifeBuffer);
-
-    if (!backgroundMusic.openFromFile("data\\sound\\bgm_action_1.ogg")) {
-        #ifdef _WIN32
-        //MessageBox(NULL, "Error loading file: bgm_action_1.ogg", "Arkanoid Error", MB_OK);
-        #endif
-    }
-
-    // Load sprite/texture resources
-    if (!textureBrick.loadFromFile("data\\graphics\\brick.png")) {
-    }
-    /*if (!texturePaddle.loadFromFile("data\\graphics\\bat_black.png")) {
-    }*/
-    if (!textureBall.loadFromFile("data\\graphics\\ball.png")) {
-    }
-    if (!texturePowerup.loadFromFile("data\\graphics\\powerup_extra_life.png")) {
-    }
-    if (!textureBorderSide.loadFromFile("data\\graphics\\border_side.png")) {
-    }
-    if (!textureBorderTop.loadFromFile("data\\graphics\\border_top.png")) {
-    }
-    if (!textureBorderCornerLeft.loadFromFile("data\\graphics\\border_corner_left.png")) {
-    }
-    if (!textureBorderCornerRight.loadFromFile("data\\graphics\\border_corner_right.png")) {
-    }
-    if (!textureShieldLeft.loadFromFile("data\\graphics\\shield_left.png")) {
-    }
-    if (!textureShieldRight.loadFromFile("data\\graphics\\shield_right.png")) {
-    }
 }
 
 void PlayState::newGame(GameEngine *game)
@@ -442,6 +319,8 @@ void PlayState::newGame(GameEngine *game)
     playerScore = 0;
     numLives = numLivesDefault;
 
+    currentLevel.clear();
+    currentLevel = level1;
     generateNewBrickGrid(countBricksX, countBricksY * level, brickWidth, brickHeight);
     //playBrickGridAnimation(game, countBricksX, countBricksY);
 
@@ -465,20 +344,15 @@ void PlayState::generateNewBrickGrid(const int numBricksX, const int numBricksY,
 {
     bricks.clear();
 
-    for (int iX{0}; iX < numBricksX; iX++) {
-        for (int iY{0}; iY < numBricksY; iY++) {
-            // Generate random colour for brick
-            //std::srand(std::time(0));
+    for (int i{0}; i < currentLevel.size(); i++) {
+        int r = std::rand() % 256;
+        int g = std::rand() % 256;
+        int b = std::rand() % 256;
+        sf::Color colour(r, g, b);
 
-            int r = std::rand() % 256;
-            int g = std::rand() % 256;
-            int b = std::rand() % 256;
-            sf::Color colour(r, g, b);
-
-            bricks.emplace_back(
-                (iX + 1) * (width + 0) - 0, (iY + 6) * (height + 0),
-                width, height, colour, textureBrick);
-        }
+        bricks.emplace_back(
+            (currentLevel.at(i).x + 1) * 40, (currentLevel.at(i).y * brickHeight)+ 150,
+            width, height, currentLevel.at(i).colour, textureBrick);
     }
 }
 
@@ -497,6 +371,21 @@ void PlayState::loadNextLevel()
         if (isSoundEnabled()) {
             backgroundMusic.play();
         }
+    }
+
+    currentLevel.clear();
+
+    switch (level) {
+        case 1:
+            currentLevel = level1;
+            break;
+        case 2:
+            currentLevel = level2;
+            break;
+        default:
+            level = 1;
+            currentLevel = level1;
+            break;
     }
 
     generateNewBrickGrid(countBricksX, countBricksY + (level - 1), brickWidth, brickHeight);
@@ -521,8 +410,8 @@ void PlayState::testCollision(Paddle& mPaddle, Ball& mBall)
 
     float intersectX{abs(mPaddle.x() - mBall.x()) - 4};
     float relativeIntersectX{/*paddle.x() - intersectX*/intersectX};
-    float normalizedRelativeIntersectionX{(relativeIntersectX / (paddleWidth / 2))};
-    float bounceAngle{normalizedRelativeIntersectionX * (4 * 3.14) / 12};
+    float normalizedRelativeIntersectionX{(relativeIntersectX / (paddle.getWidth() / 2))};
+    float bounceAngle{normalizedRelativeIntersectionX * (3 * 3.14) / 12};
 
     std::cout << intersectX << std::endl;
     std::cout << relativeIntersectX << std::endl;
@@ -554,17 +443,6 @@ void PlayState::testCollision(Brick& mBrick, Ball& mBall)
         return;
     }
 
-    /*if (paddle.getWidth() < 430) {
-        paddle.setSize(paddle.getWidth() + 20, paddleHeight);
-        paddle.setPos(paddle.x() + 0, paddle.y());
-        paddle.shape.setOrigin(paddle.getWidth() / 2, paddle.getHeight() / 2);
-        balls.front().setPos(balls.front().x() - 0, balls.front().y());
-    }*/
-
-    if (isPlayerPlaying()) {
-        playerScore += ballPoints;
-    }
-
     mBrick.destroy();
 
     // Calculate intersections of ball/brick
@@ -580,60 +458,14 @@ void PlayState::testCollision(Brick& mBrick, Ball& mBall)
     float minOverlapY{ballFromTop ? overlapTop : overlapBottom};
 
     if (abs(minOverlapX) < abs(minOverlapY)) {
-        //mBall.setVelocity(ballFromLeft ? -mBall.getVelocity() : mBall.getVelocity());
-
-        //mBall.setVelocityX(ballFromLeft ? -mBall.getVelocity() : mBall.getVelocity());
-        //int newVelocityX = ballFromLeft ? -mBall.getVelocity() : mBall.getVelocity();
-        // Realistic brick physics
-        //newVelocityX *= abs(mBrick.x() - mBall.x()) / 20;
-        //mBall.setVelocityX(newVelocityX);
-
-        float intersectY = abs(mBall.y() - mBrick.y()) - 4;
-        float relativeIntersectY = intersectY;
-        float normalizedRelativeIntersectionY = (relativeIntersectY / (brickHeight / 2));
-        float bounceAngle = normalizedRelativeIntersectionY * (4 * 3.14) / 12;
-
-        int ballVy = mBall.getVelocity() * sin(bounceAngle);
-        int ballVx = mBall.getVelocity() * -cos(bounceAngle);
-
-        //std::cout << "side" << std::endl;
-
         mBall.setVelocityX(-mBall.getVelocityX());
         mBall.setVelocityY(mBrick.y() < mBall.y() ? abs(mBall.getVelocityY()) : -abs(mBall.getVelocityY()));
-
-        //mBall.setVelocityX(ballVx);
-        //mBall.setVelocityY(ballVy);
-        //mBall.setVelocityY(mBrick.y() < mBall.y() ? abs(mBall.getVelocityY()) : -abs(mBall.getVelocityY()));
     } else {
-       /* if (ballFromTop) {
-            mBall.setVelocityY(mBall.getVelocityY() ? -mBall.getVelocityY() : mBall.getVelocityY());
-        } else {
-            mBall.setVelocityY(mBall.getVelocityY() ? mBall.getVelocityY() : -mBall.getVelocityY());
-        }*/
-        //mBall.setVelocityY(ballFromTop ? -mBall.getVelocity() : mBall.getVelocity());
-
-        float intersectX = abs(mBall.x() - mBrick.x()) - 4;
-        float relativeIntersectX = /*paddle.x() - intersectX*/intersectX;
-        float normalizedRelativeIntersectionX = (relativeIntersectX / (brickWidth / 2));
-        float bounceAngle = normalizedRelativeIntersectionX * (4 * 3.14) / 12;
-
-        int ballVx = mBall.getVelocity() * sin(bounceAngle);
-        int ballVy = mBall.getVelocity() * cos(bounceAngle);
-
-        //std::cout << "top/bottom" << std::endl;
-
-        //mBall.setVelocityX(ballVx);
         mBall.setVelocityX(mBall.x() < mBrick.x() ? -mBall.getVelocityX() : mBall.getVelocityX());
         mBall.setVelocityY(ballFromTop ? -abs(mBall.getVelocityY()) : abs(mBall.getVelocityY()));
-
-        //mBall.setVelocityY(ballVx, -ballVy);
     }
 
-    std::cout << "x :" << mBall.getVelocityX() << "    y : " << mBall.getVelocityY() << std::endl;
-
     if (!((std::rand() % 100) % powerupProbability)) {
-        //int speed = (std::rand() % 5) + 1;
-        //std::cout << speed << std::endl;
         powerups.emplace_back(
             mBrick.x(), mBrick.y(),
             powerupWidth, powerupHeight, /*speed*/ 2, powerupColour, texturePowerup);
@@ -660,7 +492,7 @@ void PlayState::testCollision(Paddle& mPaddle, Powerup& mPowerup)
             numLives++;
             break;
         case 1:
-            paddle.setSize(paddle.getWidth() + 15, paddleHeight);
+            paddle.setSize(paddle.getWidth() + 15, paddle.getHeight());
             paddle.setPos(paddle.x() + 0, paddle.y());
             paddle.shape.setOrigin(paddle.getWidth() / 2, paddle.getHeight() / 2);
             balls.front().setPos(balls.front().x() - 0, balls.front().y());
@@ -690,36 +522,25 @@ void PlayState::testCollision(Paddle& mPaddle, Powerup& mPowerup)
 
 void PlayState::playBrickGridAnimation(GameEngine *game, const int numBricksX, const int numBricksY)
 {
-    /*std::vector<int> nums;
-    for (int i{0}; i < numBricksX * numBricksY; i++) {
-        nums.push_back(i);
-    }
-
-    std::random_shuffle(nums.begin(), nums.end());
-
-    for (int i{0}; i < nums.size(); i++) {
-        std::cout << nums.at(i) << std::endl;
-    }*/
-
     for (int i{0}; i < numBricksY; i += 1) {
         for (int j{i}; j < numBricksX; j++) {
             bricks.at(j).setVisibility(true);
             //std::cout << j << ", " << i << std::endl;
         }
 
-        game->window.clear(sf::Color::Black);
+        game->getWindow().clear(sf::Color::Black);
 
-        game->window.draw(paddle.shape);
+        game->getWindow().draw(paddle.shape);
 
         for (auto& brick : bricks) {
             if (brick.isVisible()) {
-                game->window.draw(brick.shape);
-                //game->window.draw(brick.shadow);
+                game->getWindow().draw(brick.shape);
+                //game->getWindow().draw(brick.shadow);
                 return;
             }
         }
 
-        game->window.display();
+        game->getWindow().display();
     }
 }
 
@@ -734,50 +555,106 @@ bool PlayState::allBricksVisible() const noexcept
     return true;
 }
 
-void PlayState::setupBackground()
+void PlayState::LoadResources(GameEngine *game)
 {
+    // Load textures
+    textureBrick = game->resourceMan.GetTexture("brick.png");
+    textureBall = game->resourceMan.GetTexture("ball.png");
+    texturePowerup = game->resourceMan.GetTexture("powerup_extra_life.png");
+    textureBorderSide = game->resourceMan.GetTexture("border_side.png");
+    textureBorderTop = game->resourceMan.GetTexture("border_top.png");
+    textureBorderCornerLeft = game->resourceMan.GetTexture("border_corner_left.png");
+    textureBorderCornerRight = game->resourceMan.GetTexture("border_corner_right.png");
+    textureShieldLeft = game->resourceMan.GetTexture("shield_left.png");
+    textureShieldRight = game->resourceMan.GetTexture("shield_right.png");
+    textureGameTitle = game->resourceMan.GetTexture("game_title.png");
+
+    // Load fonts
+    //font = game->resourceMan.GetFont("PressStart2P.ttf");
+
+    // Load sounds
+    brickCollisionBuffer = game->resourceMan.GetSound("brick_collision.wav");
+    paddleCollisionBuffer = game->resourceMan.GetSound("paddle_collision.wav");
+    newGameBuffer = game->resourceMan.GetSound("new_game.wav");
+    gainPowerupBuffer = game->resourceMan.GetSound("gain_powerup.wav");
+    loseLifeBuffer = game->resourceMan.GetSound("lose_life.wav");
+    gainPowerupBuffer = game->resourceMan.GetSound("gain_powerup.wav");
+
+    if (!backgroundMusic.openFromFile("data\\bgm\\bgm_action_1.ogg")) {
+        #ifdef _WIN32
+        //MessageBox(NULL, "Error loading file: bgm_action_1.ogg", "Arkanoid Error", MB_OK);
+        #endif
+    }
+
+    // Set up sounds from sound buffers
+    brickCollisionSound.setBuffer(brickCollisionBuffer);
+    paddleCollisionSound.setBuffer(paddleCollisionBuffer);
+    newGameSound.setBuffer(newGameBuffer);
+    gainPowerupSound.setBuffer(gainPowerupBuffer);
+    loseLifeSound.setBuffer(loseLifeBuffer);
+
+    std::cout << "Resources loaded" << std::endl;
+
+    loadObjects();
+}
+
+void PlayState::loadObjects()
+{
+    std::cout << "Loading PlayState objects..." << std::endl;
+
+    // Set up top border shape
     borderTop.setPosition(20, 30);
     borderTop.setSize({440, brickWidth / 2});
     borderTop.setTexture(&textureBorderTop);
     borderTop.setOrigin(0, 0);
 
+    // Set up left border shape
     borderLeft.setPosition(0, 50);
     borderLeft.setSize({brickWidth / 2, 570});
     borderLeft.setTexture(&textureBorderSide);
     borderLeft.setOrigin(0, 0);
 
+    // Set up right border shape
     borderRight.setPosition(460, 50);
     borderRight.setSize({brickWidth / 2, 570});
     borderRight.setTexture(&textureBorderSide);
     borderRight.setOrigin(0, 0);
 
+    // Set up left border corner shape
     borderCornerLeft.setPosition(0, 30);
     borderCornerLeft.setSize({brickWidth / 2, brickWidth / 2});
     borderCornerLeft.setTexture(&textureBorderCornerLeft);
     borderCornerLeft.setOrigin(0, 0);
 
+    // Set up right border corner shape
     borderCornerRight.setPosition(460, 30);
     borderCornerRight.setSize({brickWidth / 2, brickWidth / 2});
     borderCornerRight.setTexture(&textureBorderCornerRight);
     borderCornerRight.setOrigin(0, 0);
 
+    // Set up left shield shape
     shieldLeft.setPosition(0, 620 - 50);
     shieldLeft.setSize({25, brickWidth / 2});
     shieldLeft.setTexture(&textureShieldLeft);
     shieldLeft.setOrigin(0, 0);
 
+    // Set up right shield shape
     shieldRight.setPosition(455, 620 - 50);
     shieldRight.setSize({25, brickWidth / 2});
     shieldRight.setTexture(&textureShieldRight);
     shieldRight.setOrigin(0, 0);
 
+    // Set up top shadow shape
     shadowTop.setPosition(brickWidth, 11 + brickWidth);
     shadowTop.setSize({420, brickWidth / 2});
     shadowTop.setFillColor(sf::Color(0, 0, 0, 127));
     shadowTop.setOrigin(0, 0);
 
+    // Set up left shadow shape
     shadowLeft.setPosition(brickWidth / 2, 40);
     shadowLeft.setSize({brickWidth / 2, 580});
     shadowLeft.setFillColor(sf::Color(0, 0, 0, 127));
     shadowLeft.setOrigin(0, 0);
+
+    std::cout << "PlayState objects loaded" << std::endl;
 }
