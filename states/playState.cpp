@@ -43,19 +43,14 @@ PlayState::PlayState() :
     m_isSoundEnabled(true),
     highScore(0),
     numLives(0),
-    level(1),
+    playerLevel(1),
     m_isPlayerPlaying(true),
     paddle(/*initPaddleX, initPaddleY, paddleWidth, paddleHeight, paddleColour*/)
     //brickGrid(countBricksX, countBricksY, brickWidth, brickHeight)
     //lastFt{0.f},
     //currentSlice{0.f}
 {
-    std::cout << "PlayState constructor" << std::endl;
-
-    //newGame();
-
-    //loadResources();
-    //setupBackground();
+    //std::cout << "PlayState constructor" << std::endl;
 
     /*lastFt = 0.f;
     currentSlice = 0.f;*/
@@ -98,15 +93,25 @@ void PlayState::HandleEvents(GameEngine *game)
 
     //timePoint1 = std::chrono::high_resolution_clock::now();
 
-    // Poll window events, required so player can interact with game window
     sf::Event event;
     while (game->getWindow().pollEvent(event)) {
-        if (event.type == sf::Event::Closed) {
-            game->getWindow().close();
-        } else if (event.type == sf::Event::LostFocus) {
+        if (event.type == sf::Event::LostFocus) {
             pauseGame();
         } else if (event.type == sf::Event::GainedFocus) {
             resumeGame();
+        }
+
+        if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::S) {
+            if (isSoundEnabled()) {
+                shootProjectileSound.play();
+            }
+
+            projectiles.emplace_back(paddle.x() - (paddle.getWidth() / 2) + 8,
+                paddle.y() - paddle.getHeight());
+            projectiles.emplace_back(paddle.x() + (paddle.getWidth() / 2) - 8,
+                paddle.y() - paddle.getHeight());
+        } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::G) {
+            bricks.clear();
         }
     }
 
@@ -114,51 +119,67 @@ void PlayState::HandleEvents(GameEngine *game)
         return;
     }
 
-    // Accept player input
+    // Handle player input
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
         game->Quit();
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
         game->pushState(/*PausedState::Instance()*/new PausedState());
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) {
-        if (balls.size() == 1) {
-            if (!balls.front().isLaunched()) {
-                balls.front().launch();
-                balls.front().setVelocity(0, -balls.front().getVelocity());
+
+        //if (!keyAlreadyPressed) {
+
+            //keyAlreadyPressed = true;
+
+            if (balls.size() == 1) {
+                if (!isBallLaunched()) {
+                    launchBall();
+                    balls.front().setVelocity(0, -balls.front().getVelocity());
+                }
             }
-        }
+
+            /*if (isSoundEnabled()) {
+                shootProjectileSound.play();
+            }
+
+            projectiles.emplace_back(paddle.x() - (paddle.getWidth() / 2) + 8,
+                paddle.y() - paddle.getHeight());
+            projectiles.emplace_back(paddle.x() + (paddle.getWidth() / 2) - 8,
+                paddle.y() - paddle.getHeight());*/
+            //}
+        
     }
+
+    /*if (sf::Keyboard::isKeyReleased(sf::Keyboard::Key::S)) {
+        keyAlreadyPressed = false;
+    }*/
 
     if (!numLives) {
         newGame(game);
     }
 
-    if (bricks.empty()) {
-        loadNextLevel();
+    if (bricks.empty() && powerups.empty()) {
+        loadLevel(game, playerLevel + 1);
     }
 
-    // Player has missed ball; lose a life and reset ball
-    if (!balls.empty()) {
-        for (auto &ball : balls) {
-            if (ball.y() > paddle.y()) {
-                //std::cout << "Ball destroyed!" << std::endl;
-                ball.destroy();
-            }
+    // Destroy all missed balls
+    for (auto& ball : balls) {
+        if (ball.y() > paddle.y()) {
+            ball.destroy();
         }
     }
 
     if (balls.empty()) {
-        numLives--;
-        balls.emplace_back(paddle.x(), paddle.y() - paddle.getHeight() / 2, ballRadius, ballColour, textureBall);
-        //balls.front().launch();
-        if (isPlayerPlaying()) {
+        if (!numLives--) {
+            newGame(game);
+        }
+
+        balls.emplace_back(game ,paddle.x(), paddle.y() - ((paddle.getHeight() / 2) + balls.front().getRadius())/*, ballRadius, ballColour, textureBall*/);
+        dockBall();
+        //if (isPlayerPlaying()) {
             if (isSoundEnabled()) {
                 loseLifeSound.play();
             }
-        }
-    }
-
-    if (!numLives) {
-        newGame(game);
+        //}
     }
 
     // Perform collision detection between all balls and bricks
@@ -172,7 +193,14 @@ void PlayState::HandleEvents(GameEngine *game)
 
     // Perform collision detection between paddle and all powerups
     for (auto& powerup : powerups) {
-        testCollision(paddle, powerup);
+        testCollision(game, paddle, powerup);
+    }
+
+    // Perform collision detection between projectiles and all bricks
+    for (auto& projectile : projectiles) {
+        for (auto& brick : bricks) {
+            testCollision(brick, projectile);
+        }
     }
 
     //auto ftSeconds(ft / 1000.f);
@@ -191,19 +219,22 @@ void PlayState::Update(GameEngine *game)
         return;
     }
 
-    if (!balls.empty()) {
-        if (balls.front().isLaunched()) {
-            for (auto& ball : balls) {
-                ball.update(game->getWindowWidth(), game->getWindowHeight());
-            }
-        } else {
-            balls.front().setPos(paddle.x() - balls.front().getRadius() / 2, paddle.y() - ((balls.front().getRadius() * 2) + 3));
+    if (isBallLaunched()) {
+        for (auto& ball : balls) {
+            ball.update(game->getWindowWidth(), game->getWindowHeight());
         }
+    } else {
+        balls.front().setPos(paddle.x() - balls.front().getRadius() / 2, paddle.y() - ((balls.front().getRadius() * 2) + 3));
     }
 
     for (auto& powerup : powerups) {
         powerup.update(game->getWindowWidth(), game->getWindowHeight());
         //std::cout << "Updating powerup" << std::endl;
+    }
+
+    for (auto& projectile : projectiles) {
+        projectile.update(game->getWindowWidth(), game->getWindowHeight());
+        //std::cout << "Updating projectile" << std::endl;
     }
 
     /*currentSlice += lastFt;
@@ -232,17 +263,24 @@ void PlayState::Update(GameEngine *game)
                 [](const Powerup& mPowerup) { return mPowerup.isDestroyed(); }),
             end(powerups)
         );
+
+        // Remove destroyed projectiles from projectiles vector
+        projectiles.erase(
+            remove_if(begin(projectiles), end(projectiles),
+                [](const Projectile& mProjectile) { return mProjectile.isDestroyed(); }),
+            end(projectiles)
+        );
     //}
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::F)) {
-        balls.back().launch();
-        balls.emplace_back(paddle.x() - balls.back().getRadius() / 2, paddle.y() - 20, ballRadius, ballColour, textureBall);
-        balls.back().launch();
+        launchBall();
+        balls.emplace_back(game, paddle.x() - balls.back().getRadius() / 2, paddle.y() - 20);
+        //balls.back().Init(game);
         balls.back().setVelocity(0, -32);
     }
 
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::G)) {
-        bricks.clear();
+        //bricks.clear();
     }
 }
 
@@ -296,8 +334,13 @@ void PlayState::Draw(GameEngine *game)
         game->getWindow().draw(powerup.shape);
     }
 
+    // Draw projectiles
+    for (auto& projectile : projectiles) {
+        game->getWindow().draw(projectile.shape);
+    }
+
     // Draw HUD
-    hud.displayHud(&game->getWindow(), playerScore, highScore, numLives, level, isPlayerPlaying());
+    hud.displayHud(&game->getWindow(), playerScore, highScore, numLives, playerLevel, isPlayerPlaying());
 
     game->getWindow().display();
 
@@ -314,14 +357,14 @@ void PlayState::newGame(GameEngine *game)
 {
     //std::cout << "PlayState newGame()" << std::endl;
 
-    level = 1;
+    playerLevel = 1;
     highScore = std::max(playerScore, highScore);
     playerScore = 0;
     numLives = numLivesDefault;
 
-    currentLevel.clear();
-    currentLevel = level1;
-    generateNewBrickGrid(countBricksX, countBricksY * level, brickWidth, brickHeight);
+    paddle.reset();
+
+    generateNewBrickGrid(game, playerLevel);
     //playBrickGridAnimation(game, countBricksX, countBricksY);
 
     paddle.setPos(initPaddleX, initPaddleY);
@@ -329,66 +372,75 @@ void PlayState::newGame(GameEngine *game)
     powerups.clear();
 
     balls.clear();
-    balls.emplace_back(initBallX, initBallY, ballRadius, ballColour, textureBall);
+    balls.emplace_back(game, initBallX, initBallY/*, ballRadius, ballColour, textureBall*/);
     balls.front().setPos(initPaddleX, paddle.top() - (balls.front().getRadius() * 2) + 1);
 
-    if (isPlayerPlaying()) {
+    if (isSoundEnabled()) {
         newGameSound.play();
-        if (isSoundEnabled()) {
-            backgroundMusic.play();
-        }
+        backgroundMusic.play();
     }
 }
 
-void PlayState::generateNewBrickGrid(const int numBricksX, const int numBricksY, const int width, const int height)
+void PlayState::generateNewBrickGrid(GameEngine *game, const int level)
 {
+    std::cout << level << std::endl;
+
     bricks.clear();
 
-    for (int i{0}; i < currentLevel.size(); i++) {
-        int r = std::rand() % 256;
-        int g = std::rand() % 256;
-        int b = std::rand() % 256;
-        sf::Color colour(r, g, b);
-
+    for (int i{0}; i < levels.at(level - 1).size(); i++) {
         bricks.emplace_back(
-            (currentLevel.at(i).x + 1) * 40, (currentLevel.at(i).y * brickHeight)+ 150,
-            width, height, currentLevel.at(i).colour, textureBrick);
+            (levels.at(level - 1).at(i).x + 1) * brickWidth,
+            (levels.at(level - 1).at(i).y * brickHeight) + 150,
+            levels.at(level - 1).at(i).colour, textureBrick);
+        //bricks.back().Init(game);
     }
 }
 
-void PlayState::loadNextLevel()
+void PlayState::loadLevel(GameEngine *game, const int level)
 {
-    level++;
+    playerLevel = level;
 
     paddle.setPos(initPaddleX, initPaddleY);
+
     powerups.clear();
+
+    dockBall();
     balls.clear();
-    balls.emplace_back(initBallX, initBallY, ballRadius, ballColour, textureBall);
+    balls.emplace_back(game, initBallX, initBallY/*, ballRadius, ballColour*//*, textureBall*/);
     balls.front().setPos(initPaddleX, paddle.top() - (balls.front().getRadius() * 2) + 1);
 
     if (isPlayerPlaying()) {
-        newGameSound.play();
         if (isSoundEnabled()) {
+            newGameSound.play();
             backgroundMusic.play();
         }
     }
 
     currentLevel.clear();
 
-    switch (level) {
+    switch (playerLevel) {
         case 1:
             currentLevel = level1;
             break;
         case 2:
             currentLevel = level2;
             break;
+        case 3:
+            currentLevel = level3;
+            break;
+        case 4:
+            currentLevel = level4;
+            break;
+        case 5:
+            currentLevel = level5;
+            break;
         default:
-            level = 1;
+            playerLevel = 1;
             currentLevel = level1;
             break;
     }
 
-    generateNewBrickGrid(countBricksX, countBricksY + (level - 1), brickWidth, brickHeight);
+    generateNewBrickGrid(game, playerLevel);
 }
 
 template <class T1, class T2>
@@ -444,6 +496,7 @@ void PlayState::testCollision(Brick& mBrick, Ball& mBall)
     }
 
     mBrick.destroy();
+    playerScore += 5;
 
     // Calculate intersections of ball/brick
     float overlapLeft{mBall.right() - mBrick.left()};
@@ -476,7 +529,25 @@ void PlayState::testCollision(Brick& mBrick, Ball& mBall)
     }
 }
 
-void PlayState::testCollision(Paddle& mPaddle, Powerup& mPowerup)
+void PlayState::testCollision(Brick& mBrick, Projectile& mProjectile)
+{
+    //std::cout << "PlayState testCollision() brick" << std::endl;
+
+    if (!isIntersecting(mBrick, mProjectile)) {
+        return;
+    }
+
+    mBrick.destroy();
+    mProjectile.destroy();
+
+    playerScore += 3;
+
+    if (isSoundEnabled()) {
+        brickCollisionSound.play();
+    }
+}
+
+void PlayState::testCollision(GameEngine *game, Paddle& mPaddle, Powerup& mPowerup)
 {
     //std::cout << "PlayState testCollision() paddle" << std::endl;
 
@@ -503,9 +574,7 @@ void PlayState::testCollision(Paddle& mPaddle, Powerup& mPowerup)
             }
             break;
         case 3:
-            balls.back().launch();
-            balls.emplace_back(paddle.x() - balls.back().radius() / 2, paddle.y() - 20, ballRadius, ballColour, textureBall);
-            balls.back().launch();
+            balls.emplace_back(game, paddle.x() - balls.back().radius() / 2, paddle.y() - 20);
             balls.back().setVelocity(0, -balls.back().getSpeed());
             break;
         case 4:
@@ -559,7 +628,7 @@ void PlayState::LoadResources(GameEngine *game)
 {
     // Load textures
     textureBrick = game->resourceMan.GetTexture("brick.png");
-    textureBall = game->resourceMan.GetTexture("ball.png");
+    //textureBall = game->resourceMan.GetTexture("ball.png");
     texturePowerup = game->resourceMan.GetTexture("powerup_extra_life.png");
     textureBorderSide = game->resourceMan.GetTexture("border_side.png");
     textureBorderTop = game->resourceMan.GetTexture("border_top.png");
@@ -579,6 +648,7 @@ void PlayState::LoadResources(GameEngine *game)
     gainPowerupBuffer = game->resourceMan.GetSound("gain_powerup.wav");
     loseLifeBuffer = game->resourceMan.GetSound("lose_life.wav");
     gainPowerupBuffer = game->resourceMan.GetSound("gain_powerup.wav");
+    shootProjectileBuffer = game->resourceMan.GetSound("fire_projectile.wav");
 
     if (!backgroundMusic.openFromFile("data\\bgm\\bgm_action_1.ogg")) {
         #ifdef _WIN32
@@ -592,6 +662,7 @@ void PlayState::LoadResources(GameEngine *game)
     newGameSound.setBuffer(newGameBuffer);
     gainPowerupSound.setBuffer(gainPowerupBuffer);
     loseLifeSound.setBuffer(loseLifeBuffer);
+    shootProjectileSound.setBuffer(shootProjectileBuffer);
 
     std::cout << "Resources loaded" << std::endl;
 
