@@ -1,6 +1,5 @@
 #include "..\stateman\gameEngine.hpp"
 #include "playState.hpp"
-//#include "menuState.hpp"
 
 #include <iostream>
 //#include <chrono>
@@ -17,19 +16,12 @@ const int PlayState::initPaddleY = 620 - 70;
 
 const int PlayState::initBallX = 620 - 64;
 const int PlayState::initBallY = 580 - 64;
-const float PlayState::ballRadius = 7.0f;
-const sf::Color PlayState::ballColour = sf::Color(255, 255, 255);
 
-const int PlayState::countBricksX = 11;
-const int PlayState::countBricksY = 6;
 const int PlayState::brickWidth = 40;
 const int PlayState::brickHeight = 20;
 
-const int PlayState::powerupWidth = 40;
-const int PlayState::powerupHeight = 20;
-const sf::Color PlayState::powerupColour = sf::Color(255, 255, 255);
-
 const int PlayState::ballPoints = 5;
+const int PlayState::projectilePoints = 3;
 
 const int PlayState::numLivesDefault = 2;
 
@@ -45,7 +37,8 @@ PlayState::PlayState() :
     numLives(0),
     playerLevel(1),
     m_isPlayerPlaying(true),
-    paddle(/*initPaddleX, initPaddleY, paddleWidth, paddleHeight, paddleColour*/)
+    shield(25, 580),
+    paddle(100, 400, 150/*initPaddleX, initPaddleY, paddleWidth, paddleHeight, paddleColour*/)
     //brickGrid(countBricksX, countBricksY, brickWidth, brickHeight)
     //lastFt{0.f},
     //currentSlice{0.f}
@@ -66,7 +59,7 @@ PlayState::~PlayState()
 void PlayState::Init(GameEngine *game)
 {
     LoadResources(game);
-    LoadObjects();
+    LoadObjects(/*game*/);
     hud.Init(game);
     paddle.Init(game);
 }
@@ -112,6 +105,13 @@ void PlayState::HandleEvents(GameEngine *game)
                 paddle.y() - paddle.getHeight());
         } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::G) {
             bricks.clear();
+        } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::R) {
+            for (auto& brick : bricks) {
+                brick.setPos(brick.x(), brick.y() + brick.getHeight());
+                if (isSoundEnabled()) {
+                    bricksMoveDownSound.play();
+                }
+            }
         }
     }
 
@@ -146,7 +146,7 @@ void PlayState::HandleEvents(GameEngine *game)
             projectiles.emplace_back(paddle.x() + (paddle.getWidth() / 2) - 8,
                 paddle.y() - paddle.getHeight());*/
             //}
-        
+
     }
 
     /*if (sf::Keyboard::isKeyReleased(sf::Keyboard::Key::S)) {
@@ -157,18 +157,23 @@ void PlayState::HandleEvents(GameEngine *game)
         newGame(game);
     }
 
-    if (bricks.empty() && powerups.empty()) {
-        loadLevel(game, playerLevel + 1);
+    if (bricks.empty()) {
+        //if (powerups.empty()) {
+            loadLevel(game, playerLevel + 1);
+        //}
+        //balls.clear();
     }
 
-    // Destroy all missed balls
-    for (auto& ball : balls) {
-        if (ball.y() > paddle.y()) {
-            ball.destroy();
+    if (!shield.IsEnabled()) {
+        // Destroy all missed balls
+        for (auto& ball : balls) {
+            if (ball.y() > /*shield.top()*/game->getWindowHeight()) {
+                ball.destroy();
+            }
         }
     }
 
-    if (balls.empty()) {
+    if (balls.empty()/* && !bricks.empty()*/) {
         if (!numLives--) {
             newGame(game);
         }
@@ -180,6 +185,12 @@ void PlayState::HandleEvents(GameEngine *game)
                 loseLifeSound.play();
             }
         //}
+    }
+
+    if (shield.IsEnabled()) {
+        for (auto& ball : balls) {
+            testCollision(shield, ball);
+        }
     }
 
     // Perform collision detection between all balls and bricks
@@ -305,6 +316,10 @@ void PlayState::Draw(GameEngine *game)
     //game->getWindow().draw(shieldRight);
     /*game->getWindow().draw(borderRight);*/
 
+    if (shield.IsEnabled()) {
+        game->getWindow().draw(shield.shape);
+    }
+
     // Draw bricks
     for (auto& brick : bricks) {
         if (brick.isVisible()) {
@@ -321,16 +336,13 @@ void PlayState::Draw(GameEngine *game)
         }
     }
 
-    // Draw paddle
-    game->getWindow().draw(paddle.shadow);
-    game->getWindow().draw(paddle.shape);
-
     // Draw background
     game->getWindow().draw(borderRight);
     game->getWindow().draw(shieldRight);
 
     // Draw powerups
     for (auto& powerup : powerups) {
+        game->getWindow().draw(powerup.shadow);
         game->getWindow().draw(powerup.shape);
     }
 
@@ -339,8 +351,12 @@ void PlayState::Draw(GameEngine *game)
         game->getWindow().draw(projectile.shape);
     }
 
+    // Draw paddle
+    game->getWindow().draw(paddle.shadow);
+    game->getWindow().draw(paddle.shape);
+
     // Draw HUD
-    hud.displayHud(&game->getWindow(), playerScore, highScore, numLives, playerLevel, isPlayerPlaying());
+    hud.displayHud(game, playerScore, highScore, numLives, playerLevel, isPlayerPlaying());
 
     game->getWindow().display();
 
@@ -370,6 +386,7 @@ void PlayState::newGame(GameEngine *game)
     paddle.setPos(initPaddleX, initPaddleY);
 
     powerups.clear();
+    projectiles.clear();
 
     balls.clear();
     balls.emplace_back(game, initBallX, initBallY/*, ballRadius, ballColour, textureBall*/);
@@ -391,18 +408,20 @@ void PlayState::generateNewBrickGrid(GameEngine *game, const int level)
         bricks.emplace_back(
             (levels.at(level - 1).at(i).x + 1) * brickWidth,
             (levels.at(level - 1).at(i).y * brickHeight) + 150,
-            levels.at(level - 1).at(i).colour, textureBrick);
+            levels.at(level - 1).at(i).colour, textureBrick,
+            0);
         //bricks.back().Init(game);
     }
 }
 
 void PlayState::loadLevel(GameEngine *game, const int level)
 {
-    playerLevel = level;
+    playerLevel = (level < 6) ? level : 1;
 
     paddle.setPos(initPaddleX, initPaddleY);
 
     powerups.clear();
+    projectiles.clear();
 
     dockBall();
     balls.clear();
@@ -414,30 +433,6 @@ void PlayState::loadLevel(GameEngine *game, const int level)
             newGameSound.play();
             backgroundMusic.play();
         }
-    }
-
-    currentLevel.clear();
-
-    switch (playerLevel) {
-        case 1:
-            currentLevel = level1;
-            break;
-        case 2:
-            currentLevel = level2;
-            break;
-        case 3:
-            currentLevel = level3;
-            break;
-        case 4:
-            currentLevel = level4;
-            break;
-        case 5:
-            currentLevel = level5;
-            break;
-        default:
-            playerLevel = 1;
-            currentLevel = level1;
-            break;
     }
 
     generateNewBrickGrid(game, playerLevel);
@@ -487,6 +482,23 @@ void PlayState::testCollision(Paddle& mPaddle, Ball& mBall)
     }
 }
 
+void PlayState::testCollision(Shield& mShield, Ball& mBall)
+{
+    //std::cout << "PlayState testCollision() paddle" << std::endl;
+
+    if (mBall.bottom() < mShield.top()) {
+        return;
+    }
+
+    mBall.setVelocity(mBall.getVelocityX(), -mBall.getVelocityY());
+
+    mShield.Disable();
+
+    if (isSoundEnabled()) {
+        shieldBounceSound.play();
+    }
+}
+
 void PlayState::testCollision(Brick& mBrick, Ball& mBall)
 {
     //std::cout << "PlayState testCollision() brick" << std::endl;
@@ -495,7 +507,10 @@ void PlayState::testCollision(Brick& mBrick, Ball& mBall)
         return;
     }
 
-    mBrick.destroy();
+    if (mBrick.GetType() == 0) {
+        mBrick.destroy();
+    }
+
     playerScore += 5;
 
     // Calculate intersections of ball/brick
@@ -518,10 +533,11 @@ void PlayState::testCollision(Brick& mBrick, Ball& mBall)
         mBall.setVelocityY(ballFromTop ? -abs(mBall.getVelocityY()) : abs(mBall.getVelocityY()));
     }
 
-    if (!((std::rand() % 100) % powerupProbability)) {
-        powerups.emplace_back(
-            mBrick.x(), mBrick.y(),
-            powerupWidth, powerupHeight, /*speed*/ 2, powerupColour, texturePowerup);
+    if (mBrick.isDestroyed()) {
+        if (!((std::rand() % 100) % powerupProbability)) {
+            powerups.emplace_back(
+                mBrick.x(), mBrick.y(), texturePowerup);
+        }
     }
 
     if (isSoundEnabled()) {
@@ -557,7 +573,7 @@ void PlayState::testCollision(GameEngine *game, Paddle& mPaddle, Powerup& mPower
 
     mPowerup.destroy();
 
-    int n = std::rand() % 5;
+    int n = std::rand() % 7;
     switch (n) {
         case 0:
             numLives++;
@@ -579,6 +595,18 @@ void PlayState::testCollision(GameEngine *game, Paddle& mPaddle, Powerup& mPower
             break;
         case 4:
             paddle.setVelocity(paddle.getVelocity() + 2);
+            break;
+        case 5:
+            shield.Enable();
+            break;
+        case 6:
+            shield.Enable();
+            for (auto& brick : bricks) {
+                brick.setPos(brick.x(), brick.y() + brick.getHeight());
+            }
+            if (isSoundEnabled()) {
+                bricksMoveDownSound.play();
+            }
             break;
         default:
             break;
@@ -649,6 +677,8 @@ void PlayState::LoadResources(GameEngine *game)
     loseLifeBuffer = game->resourceMan.GetSound("lose_life.wav");
     gainPowerupBuffer = game->resourceMan.GetSound("gain_powerup.wav");
     shootProjectileBuffer = game->resourceMan.GetSound("fire_projectile.wav");
+    shieldBounceBuffer = game->resourceMan.GetSound("shield_bounce.wav");
+    bricksMoveDownBuffer = game->resourceMan.GetSound("bricks_move_down.wav");
 
     if (!backgroundMusic.openFromFile("data\\bgm\\bgm_action_1.ogg")) {
         #ifdef _WIN32
@@ -663,67 +693,82 @@ void PlayState::LoadResources(GameEngine *game)
     gainPowerupSound.setBuffer(gainPowerupBuffer);
     loseLifeSound.setBuffer(loseLifeBuffer);
     shootProjectileSound.setBuffer(shootProjectileBuffer);
+    shieldBounceSound.setBuffer(shieldBounceBuffer);
+    bricksMoveDownSound.setBuffer(bricksMoveDownBuffer);
 
     std::cout << "Resources loaded" << std::endl;
 
-    loadObjects();
+    loadObjects(game);
 }
 
-void PlayState::loadObjects()
+void PlayState::loadObjects(GameEngine *game)
 {
     std::cout << "Loading PlayState objects..." << std::endl;
 
+    const int HUD_Y = hud.getScoreBackgroundHeight();
+    const int WINDOW_X = game->getWindowWidth();
+    const int WINDOW_Y = game->getWindowHeight();
+
+
+    // Set up left border corner shape
+    borderCornerLeft.setPosition(0, HUD_Y);
+    borderCornerLeft.setSize({20, 20});
+    borderCornerLeft.setTexture(&textureBorderCornerLeft);
+    borderCornerLeft.setOrigin(0, 0);
+
+    const int CORNER_LEFT_X = borderCornerLeft.getSize().x;
+    const int CORNER_LEFT_Y = borderCornerLeft.getSize().y;
+
+    // Set up right border corner shape
+    borderCornerRight.setPosition(WINDOW_X - CORNER_LEFT_X, 30);
+    borderCornerRight.setSize({20, 20});
+    borderCornerRight.setTexture(&textureBorderCornerRight);
+    borderCornerRight.setOrigin(0, 0);
+
+    const int CORNER_RIGHT_X = borderCornerRight.getSize().x;
+    const int CORNER_RIGHT_Y = borderCornerRight.getSize().y;
+
     // Set up top border shape
-    borderTop.setPosition(20, 30);
-    borderTop.setSize({440, brickWidth / 2});
+    borderTop.setPosition(CORNER_LEFT_X, HUD_Y);
+    borderTop.setSize({WINDOW_X - CORNER_LEFT_X - CORNER_RIGHT_X, 20});
     borderTop.setTexture(&textureBorderTop);
     borderTop.setOrigin(0, 0);
 
+    const int BORDER_TOP_Y = borderTop.getSize().y;
+
     // Set up left border shape
-    borderLeft.setPosition(0, 50);
-    borderLeft.setSize({brickWidth / 2, 570});
+    borderLeft.setPosition(0, HUD_Y + CORNER_LEFT_Y);
+    borderLeft.setSize({20, WINDOW_Y - HUD_Y - CORNER_LEFT_Y});
     borderLeft.setTexture(&textureBorderSide);
     borderLeft.setOrigin(0, 0);
 
     // Set up right border shape
-    borderRight.setPosition(460, 50);
-    borderRight.setSize({brickWidth / 2, 570});
+    borderRight.setPosition(WINDOW_X - CORNER_LEFT_X, HUD_Y + CORNER_RIGHT_Y);
+    borderRight.setSize({20, WINDOW_Y - HUD_Y - CORNER_RIGHT_Y});
     borderRight.setTexture(&textureBorderSide);
     borderRight.setOrigin(0, 0);
 
-    // Set up left border corner shape
-    borderCornerLeft.setPosition(0, 30);
-    borderCornerLeft.setSize({brickWidth / 2, brickWidth / 2});
-    borderCornerLeft.setTexture(&textureBorderCornerLeft);
-    borderCornerLeft.setOrigin(0, 0);
-
-    // Set up right border corner shape
-    borderCornerRight.setPosition(460, 30);
-    borderCornerRight.setSize({brickWidth / 2, brickWidth / 2});
-    borderCornerRight.setTexture(&textureBorderCornerRight);
-    borderCornerRight.setOrigin(0, 0);
-
     // Set up left shield shape
-    shieldLeft.setPosition(0, 620 - 50);
-    shieldLeft.setSize({25, brickWidth / 2});
+    shieldLeft.setPosition(0, WINDOW_Y - 50);
+    shieldLeft.setSize({25, 20});
     shieldLeft.setTexture(&textureShieldLeft);
     shieldLeft.setOrigin(0, 0);
 
     // Set up right shield shape
-    shieldRight.setPosition(455, 620 - 50);
-    shieldRight.setSize({25, brickWidth / 2});
+    shieldRight.setPosition(WINDOW_X - 25, WINDOW_Y - 50);
+    shieldRight.setSize({25, 20});
     shieldRight.setTexture(&textureShieldRight);
     shieldRight.setOrigin(0, 0);
 
     // Set up top shadow shape
-    shadowTop.setPosition(brickWidth, 11 + brickWidth);
-    shadowTop.setSize({420, brickWidth / 2});
+    shadowTop.setPosition(CORNER_LEFT_X, HUD_Y + BORDER_TOP_Y);
+    shadowTop.setSize({WINDOW_X - CORNER_LEFT_X - CORNER_RIGHT_X, 20});
     shadowTop.setFillColor(sf::Color(0, 0, 0, 127));
     shadowTop.setOrigin(0, 0);
 
     // Set up left shadow shape
-    shadowLeft.setPosition(brickWidth / 2, 40);
-    shadowLeft.setSize({brickWidth / 2, 580});
+    shadowLeft.setPosition(20, HUD_Y + BORDER_TOP_Y + 20);
+    shadowLeft.setSize({20, WINDOW_Y - HUD_Y - BORDER_TOP_Y});
     shadowLeft.setFillColor(sf::Color(0, 0, 0, 127));
     shadowLeft.setOrigin(0, 0);
 
