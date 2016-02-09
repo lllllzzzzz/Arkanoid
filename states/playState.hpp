@@ -35,36 +35,38 @@
         void Update(GameEngine *game);
         void Draw(GameEngine *game);
 
-        //void loadResources();
-        void newGame(GameEngine *game);
-        void generateNewBrickGrid(GameEngine *game, const int level);
-        void playBrickGridAnimation(GameEngine *game, const int numBricksX, const int numBricksY);
-        bool allBricksVisible() const noexcept;
-        void loadLevel(GameEngine *game, const int level);
-        void setupBackground();
-
         void LoadResources(GameEngine *game);
-        void loadObjects(GameEngine *game);
+        void LoadObjects(GameEngine *game);
 
-        bool isGameRunning() const noexcept { return m_isGameRunning; }
-        void pauseGame() { m_isGameRunning = false; }
-        void resumeGame() { m_isGameRunning = true; }
+        void NewGame(GameEngine *game);
+        void LoadLevel(GameEngine *game, const int level);
+        void GenerateNewBrickGrid(GameEngine *game, const int level);
 
-        inline bool isBallLaunched() const noexcept { return m_isBallLaunched; }
-        inline void launchBall() { m_isBallLaunched = true; }
-        inline void dockBall() { m_isBallLaunched = false; }
+        bool IsGameRunning() const noexcept { return m_isGameRunning; }
+        void PauseGame() { m_isGameRunning = false; }
+        void ResumeGame() { m_isGameRunning = true; }
 
-        inline bool isSoundEnabled() const noexcept { return m_isSoundEnabled; }
-        inline void enableSound() { m_isSoundEnabled = true; }
-        inline void disableSound() { m_isSoundEnabled = false; }
+        void ApplyPowerup(GameEngine *game);
+        void RemovePowerups(GameEngine *game);
+        void AddBonusPoints(GameEngine *game, const int level);
+
+        //int GainLives(const int numLives) { return playerLives += numLives; }
+
+        inline bool IsBallLaunched() const noexcept { return m_isBallLaunched; }
+        inline void LaunchBall() { m_isBallLaunched = true; }
+        inline void DockBall() { m_isBallLaunched = false; }
+
+        inline bool IsSoundEnabled() const noexcept { return m_isSoundEnabled; }
+        inline void EnableSound() { m_isSoundEnabled = true; }
+        inline void DisableSound() { m_isSoundEnabled = false; }
 
         template <class T1, class T2>
-        bool isIntersecting(T1& mA, T2& mB);
-        void testCollision(GameEngine *game, Paddle& mPaddle, Ball& mBall);
-        void testCollision(GameEngine *game, Brick& mBrick, Ball& mBall);
-        void testCollision(GameEngine *game, Paddle& mPaddle, Powerup& mPowerup);
-        void testCollision(GameEngine *game, Brick& mBrick, Projectile& mProjectile);
-        void testCollision(GameEngine *game, Shield& mShield, Ball& mBall);
+        bool IsIntersecting(T1& mA, T2& mB);
+        void TestCollision(GameEngine *game, Paddle& mPaddle, Ball& mBall);
+        void TestCollision(GameEngine *game, Brick& mBrick, Ball& mBall);
+        void TestCollision(GameEngine *game, Paddle& mPaddle, Powerup& mPowerup);
+        void TestCollision(GameEngine *game, Brick& mBrick, Projectile& mProjectile);
+        void TestCollision(GameEngine *game, Shield& mShield, Ball& mBall);
 
         static PlayState* Instance() {
             return &m_PlayState;
@@ -72,9 +74,6 @@
 
         //std::chrono::high_resolution_clock::timePoint1;
         //std::chrono::high_resolution_clock::timePoint2;
-
-        std::vector<sf::Sound> sounds;
-        sf::Music backgroundMusic;
 
     private:
         typedef struct
@@ -95,17 +94,24 @@
             BRICKS_MOVE_DOWN = 7
         };
 
+        enum /*class*/ BackgroundObject : int {
+            BORDER_TOP = 0,
+            BORDER_LEFT = 1,
+            BORDER_RIGHT = 2,
+            BORDER_CORNER_LEFT = 3,
+            BORDER_CORNER_RIGHT = 4,
+            SHIELD_LEFT = 5,
+            SHIELD_RIGHT = 6,
+            SHADOW_TOP = 7,
+            SHADOW_LEFT = 8,
+            BACKGROUND = 9
+        };
+
         static PlayState m_PlayState;
 
-        bool m_isPlayerPlaying;
-        bool m_isSoundEnabled;
-        bool m_isGameRunning{true};
-        bool m_isBallLaunched{false};
-
-        int numLives;
-        int playerLevel;
-        int playerScore;
-        int highScore;
+        std::vector<sf::RectangleShape> background;
+        std::vector<sf::Sound> sounds;
+        sf::Music backgroundMusic;
 
         Paddle paddle;
         Shield shield;
@@ -116,17 +122,15 @@
         std::vector<Projectile> projectiles;
         //BrickGrid brickGrid;
 
-        sf::RectangleShape borderTop;
-        sf::RectangleShape borderLeft;
-        sf::RectangleShape borderRight;
-        sf::RectangleShape borderCornerLeft;
-        sf::RectangleShape borderCornerRight;
-        sf::RectangleShape shieldLeft;
-        sf::RectangleShape shieldRight;
-        sf::RectangleShape shadowTop;
-        sf::RectangleShape shadowLeft;
+        bool m_isPlayerPlaying;
+        bool m_isSoundEnabled;
+        bool m_isGameRunning;
+        bool m_isBallLaunched;
 
-        //sf::RectangleShape gameTitle;
+        int playerLives;
+        int playerLevel;
+        int playerScore;
+        int highScore;
 
         /*float lastFt;
         float currentSlice;
@@ -142,23 +146,14 @@
 
         static const int initPaddleX;
         static const int initPaddleY;
-        static const int paddleWidth;
-        static const int paddleHeight;
-        static const sf::Color paddleColour;
 
-        static const int countBricksX;
-        static const int countBricksY;
         static const int brickWidth;
         static const int brickHeight;
-
-        static const int powerupWidth;
-        static const int powerupHeight;
-        static const sf::Color powerupColour;
 
         static const int ballPoints;
         static const int projectilePoints;
 
-        static const int numLivesDefault;
+        static const int playerLivesDefault;
 
         static const int powerupProbability;
 
