@@ -23,7 +23,7 @@ const int PlayState::brickHeight = 20;
 const int PlayState::ballPoints = 5;
 const int PlayState::projectilePoints = 3;
 
-const int PlayState::numLivesDefault = 2;
+const int PlayState::playerLivesDefault = 2;
 
 const int PlayState::powerupProbability = 25;
 
@@ -33,11 +33,13 @@ PlayState PlayState::m_PlayState;
 
 PlayState::PlayState() :
     levels{ level1, level2, level3, level4, level5 },
-    m_isSoundEnabled(true),
     highScore(0),
-    numLives(0),
+    playerLives(0),
     playerLevel(1),
     m_isPlayerPlaying(true),
+    m_isSoundEnabled(true),
+    m_isGameRunning(true),
+    m_isBallLaunched(false),
     shield(25, 580),
     paddle(100, 400, 150/*initPaddleX, initPaddleY, paddleWidth, paddleHeight, paddleColour*/)
     //brickGrid(countBricksX, countBricksY, brickWidth, brickHeight)
@@ -60,7 +62,7 @@ PlayState::~PlayState()
 void PlayState::Init(GameEngine *game)
 {
     LoadResources(game);
-    LoadObjects(/*game*/);
+    LoadObjects(game);
     hud.Init(game);
     paddle.Init(game);
 }
@@ -90,36 +92,48 @@ void PlayState::HandleEvents(GameEngine *game)
     sf::Event event;
     while (game->getWindow().pollEvent(event)) {
         if (event.type == sf::Event::LostFocus) {
-            pauseGame();
+            PauseGame();
         } else if (event.type == sf::Event::GainedFocus) {
-            resumeGame();
+            ResumeGame();
         }
 
         if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::S) {
-            if (isSoundEnabled()) {
-                //shootProjectileSound.play();
-                sounds.at(SoundEffect::FIRE_PROJECTILE).play();
+            if (paddle.HasLaser()) {
+                projectiles.emplace_back(paddle.x() - (paddle.getWidth() / 2) + 8,
+                    paddle.y() - paddle.getHeight());
+                projectiles.emplace_back(paddle.x() + (paddle.getWidth() / 2) - 8,
+                    paddle.y() - paddle.getHeight());
+
+                if (IsSoundEnabled()) {
+                    sounds.at(SoundEffect::FIRE_PROJECTILE).play();
+                }
             }
 
-            projectiles.emplace_back(paddle.x() - (paddle.getWidth() / 2) + 8,
-                paddle.y() - paddle.getHeight());
-            projectiles.emplace_back(paddle.x() + (paddle.getWidth() / 2) - 8,
-                paddle.y() - paddle.getHeight());
         } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::G) {
             bricks.clear();
         } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::R) {
             for (auto& brick : bricks) {
                 brick.setPos(brick.x(), brick.y() + brick.getHeight());
-                if (isSoundEnabled()) {
-                    sounds.at(BRICKS_MOVE_DOWN).play();
+                if (IsSoundEnabled()) {
+                    sounds.at(SoundEffect::BRICKS_MOVE_DOWN).play();
                 }
             }
         }
     }
 
-    if (!isGameRunning()) {
+    if (!IsGameRunning()) {
         return;
     }
+
+    /*LaunchBall();
+
+    for (auto& ball : balls) {
+        if (ball.right() < paddle.left()) {
+            paddle.MoveLeft();
+        } else if (ball.left() > paddle.right()) {
+            paddle.MoveRight();
+        }
+    }*/
 
     // Handle player input
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
@@ -133,13 +147,13 @@ void PlayState::HandleEvents(GameEngine *game)
             //keyAlreadyPressed = true;
 
             if (balls.size() == 1) {
-                if (!isBallLaunched()) {
-                    launchBall();
+                if (!IsBallLaunched()) {
+                    LaunchBall();
                     balls.front().setVelocity(0, -balls.front().getVelocity());
                 }
             }
 
-            /*if (isSoundEnabled()) {
+            /*if (IsSoundEnabled()) {
                 shootProjectileSound.play();
             }
 
@@ -155,13 +169,14 @@ void PlayState::HandleEvents(GameEngine *game)
         keyAlreadyPressed = false;
     }*/
 
-    if (!numLives) {
-        newGame(game);
+    if (!playerLives) {
+        NewGame(game);
     }
 
     if (bricks.empty()) {
         //if (powerups.empty()) {
-            loadLevel(game, playerLevel + 1);
+            AddBonusPoints(game, playerLevel);
+            LoadLevel(game, playerLevel + 1);
         //}
         //balls.clear();
     }
@@ -176,14 +191,15 @@ void PlayState::HandleEvents(GameEngine *game)
     }
 
     if (balls.empty()/* && !bricks.empty()*/) {
-        if (!numLives--) {
-            newGame(game);
+        RemovePowerups(game);
+        if (!playerLives--) {
+            NewGame(game);
         }
 
         balls.emplace_back(game ,paddle.x(), paddle.y() - ((paddle.getHeight() / 2) + balls.front().getRadius()));
-        dockBall();
+        DockBall();
         //if (isPlayerPlaying()) {
-            if (isSoundEnabled()) {
+            if (IsSoundEnabled()) {
                 sounds.at(SoundEffect::NEW_GAME).play();
             }
         //}
@@ -191,28 +207,28 @@ void PlayState::HandleEvents(GameEngine *game)
 
     if (shield.IsEnabled()) {
         for (auto& ball : balls) {
-            testCollision(game, shield, ball);
+            TestCollision(game, shield, ball);
         }
     }
 
     // Perform collision detection between all balls and bricks
     // O(N*M) algorithm
     for (auto& ball : balls) {
-        testCollision(game, paddle, ball);
+        TestCollision(game, paddle, ball);
         for (auto& brick : bricks) {
-            testCollision(game, brick, ball);
+            TestCollision(game, brick, ball);
         }
     }
 
     // Perform collision detection between paddle and all powerups
     for (auto& powerup : powerups) {
-        testCollision(game, paddle, powerup);
+        TestCollision(game, paddle, powerup);
     }
 
     // Perform collision detection between projectiles and all bricks
     for (auto& projectile : projectiles) {
         for (auto& brick : bricks) {
-            testCollision(game, brick, projectile);
+            TestCollision(game, brick, projectile);
         }
     }
 
@@ -228,16 +244,16 @@ void PlayState::Update(GameEngine *game)
     //std::cout << ftStep << ", " << ftSlice << "\n";
     //std::cout << "PlayState Update()" << std::endl;
 
-    if (!isGameRunning()) {
+    if (!IsGameRunning()) {
         return;
     }
 
-    if (isBallLaunched()) {
+    if (IsBallLaunched()) {
         for (auto& ball : balls) {
             ball.update(game->getWindowWidth(), game->getWindowHeight());
         }
     } else {
-        balls.front().setPos(paddle.x() - balls.front().getRadius() / 2, paddle.y() - ((balls.front().getRadius() * 2) + 3));
+        balls.front().setPos(paddle.x() - balls.front().getRadius() / 2, paddle.y() - ((balls.front().getRadius() * 2) + 5));
     }
 
     for (auto& powerup : powerups) {
@@ -286,7 +302,7 @@ void PlayState::Update(GameEngine *game)
     //}
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::F)) {
-        launchBall();
+        LaunchBall();
         balls.emplace_back(game, paddle.x() - balls.back().getRadius() / 2, paddle.y() - 20);
         //balls.back().Init(game);
         balls.back().setVelocity(0, -32);
@@ -301,26 +317,17 @@ void PlayState::Draw(GameEngine *game)
 {
     //std::cout << "PlayState Draw()" << std::endl;
 
-    if (!isGameRunning()) {
+    if (!IsGameRunning()) {
         return;
     }
 
-    game->getWindow().clear(sf::Color(0, 0, 98));
+    game->getWindow().clear({0, 0, 0});
 
-    // Draw background
-    game->getWindow().draw(shadowTop);
-    game->getWindow().draw(shadowLeft);
-    game->getWindow().draw(borderTop);
-    game->getWindow().draw(borderLeft);
-    game->getWindow().draw(borderCornerLeft);
-    game->getWindow().draw(borderCornerRight);
-    game->getWindow().draw(shieldLeft);
-    //game->getWindow().draw(shieldRight);
-    /*game->getWindow().draw(borderRight);*/
-
-    if (shield.IsEnabled()) {
-        game->getWindow().draw(shield.shape);
-    }
+    // Draw background image
+    game->getWindow().draw(background.at(BackgroundObject::BACKGROUND));
+    // Draw background shadows
+    game->getWindow().draw(background.at(BackgroundObject::SHADOW_TOP));
+    game->getWindow().draw(background.at(BackgroundObject::SHADOW_LEFT));
 
     // Draw bricks
     for (auto& brick : bricks) {
@@ -330,6 +337,10 @@ void PlayState::Draw(GameEngine *game)
         }
     }
 
+    if (!IsBallLaunched()) {
+        balls.front().setPos(paddle.x() - balls.front().getRadius() / 2, paddle.y() - ((balls.front().getRadius() * 2) + 5));
+    }
+
     // Draw balls
     for (auto& ball : balls) {
         if (!ball.isDestroyed()) {
@@ -337,10 +348,6 @@ void PlayState::Draw(GameEngine *game)
             game->getWindow().draw(ball.shape);
         }
     }
-
-    // Draw background
-    game->getWindow().draw(borderRight);
-    game->getWindow().draw(shieldRight);
 
     // Draw powerups
     for (auto& powerup : powerups) {
@@ -357,8 +364,22 @@ void PlayState::Draw(GameEngine *game)
     game->getWindow().draw(paddle.shadow);
     game->getWindow().draw(paddle.shape);
 
+    if (shield.IsEnabled()) {
+        game->getWindow().draw(shield.shape);
+    }
+
+    // Draw background objects
+    game->getWindow().draw(background.at(BackgroundObject::BORDER_TOP));
+    game->getWindow().draw(background.at(BackgroundObject::BORDER_LEFT));
+    game->getWindow().draw(background.at(BackgroundObject::BORDER_RIGHT));
+    game->getWindow().draw(background.at(BackgroundObject::BORDER_CORNER_LEFT));
+    game->getWindow().draw(background.at(BackgroundObject::BORDER_CORNER_RIGHT));
+    game->getWindow().draw(background.at(BackgroundObject::SHIELD_LEFT));
+    game->getWindow().draw(background.at(BackgroundObject::SHIELD_RIGHT));
+    game->getWindow().draw(background.at(BackgroundObject::BORDER_CORNER_RIGHT));
+
     // Draw HUD
-    hud.displayHud(game, playerScore, highScore, numLives, playerLevel);
+    hud.displayHud(game, playerScore, highScore, playerLives, playerLevel);
 
     game->getWindow().display();
 
@@ -371,20 +392,18 @@ void PlayState::Draw(GameEngine *game)
     lastFt = ft;*/
 }
 
-void PlayState::newGame(GameEngine *game)
+void PlayState::NewGame(GameEngine *game)
 {
     //std::cout << "PlayState newGame()" << std::endl;
 
     playerLevel = 1;
     highScore = std::max(playerScore, highScore);
     playerScore = 0;
-    numLives = numLivesDefault;
+    playerLives = playerLivesDefault;
+
+    GenerateNewBrickGrid(game, playerLevel);
 
     paddle.reset();
-
-    generateNewBrickGrid(game, playerLevel);
-    //playBrickGridAnimation(game, countBricksX, countBricksY);
-
     paddle.setPos(initPaddleX, initPaddleY);
 
     powerups.clear();
@@ -394,13 +413,13 @@ void PlayState::newGame(GameEngine *game)
     balls.emplace_back(game, initBallX, initBallY);
     balls.front().setPos(initPaddleX, paddle.top() - (balls.front().getRadius() * 2) + 1);
 
-    if (isSoundEnabled()) {
+    if (IsSoundEnabled()) {
         sounds.at(SoundEffect::NEW_GAME).play();
         backgroundMusic.play();
     }
 }
 
-void PlayState::generateNewBrickGrid(GameEngine *game, const int level)
+void PlayState::GenerateNewBrickGrid(GameEngine *game, const int level)
 {
     std::cout << level << std::endl;
 
@@ -410,51 +429,80 @@ void PlayState::generateNewBrickGrid(GameEngine *game, const int level)
         bricks.emplace_back(
             game,
             (levels.at(level - 1).at(i).x + 1) * brickWidth,
-            (levels.at(level - 1).at(i).y * brickHeight) + 150,
+            (levels.at(level - 1).at(i).y * brickHeight) + 125,
             levels.at(level - 1).at(i).colour,
             0);
-        //bricks.back().Init(game);
     }
 }
 
-void PlayState::loadLevel(GameEngine *game, const int level)
+void PlayState::RemovePowerups(GameEngine *game)
+{
+    shield.Disable();
+    paddle.DisableLaser();
+    paddle.Shrink();
+}
+
+void PlayState::AddBonusPoints(GameEngine *game, const int level)
+{
+    int bonusPoints = 0;
+
+    if (shield.IsEnabled()) {
+        bonusPoints += 50;
+    }
+
+    if (paddle.HasLaser()) {
+        bonusPoints += 40;
+    }
+
+    if (paddle.IsExpanded()) {
+        bonusPoints += 25;
+    }
+
+    bonusPoints += playerLives * 12;
+    bonusPoints += level * 15;
+
+    playerScore += bonusPoints;
+}
+
+void PlayState::LoadLevel(GameEngine *game, const int level)
 {
     playerLevel = (level < 6) ? level : 1;
 
+    paddle.reset();
     paddle.setPos(initPaddleX, initPaddleY);
 
     powerups.clear();
     projectiles.clear();
 
-    dockBall();
+    DockBall();
     balls.clear();
     balls.emplace_back(game, initBallX, initBallY);
     balls.front().setPos(initPaddleX, paddle.top() - (balls.front().getRadius() * 2) + 1);
 
     if (/*isPlayerPlaying()*/ 1) {
-        if (isSoundEnabled()) {
+        if (IsSoundEnabled()) {
             sounds.at(SoundEffect::NEW_GAME).play();
             backgroundMusic.play();
         }
     }
 
-    generateNewBrickGrid(game, playerLevel);
+    GenerateNewBrickGrid(game, playerLevel);
 }
 
 template <class T1, class T2>
-bool PlayState::isIntersecting(T1& mA, T2& mB)
+bool PlayState::IsIntersecting(T1& mA, T2& mB)
 {
-    //std::cout << "PlayState isIntersecting()" << std::endl;
+    //std::cout << "PlayState IsIntersecting()" << std::endl;
 
     return mA.right() >= mB.left() && mA.left() <= mB.right()
         && mA.bottom() >= mB.top() && mA.top() <= mB.bottom();
 }
 
-void PlayState::testCollision(GameEngine *game, Paddle& mPaddle, Ball& mBall)
+void PlayState::TestCollision(GameEngine *game, Paddle& mPaddle, Ball& mBall)
 {
     //std::cout << "PlayState testCollision() paddle" << std::endl;
 
-    if (!isIntersecting(mPaddle, mBall)) {
+    if (!IsIntersecting(mPaddle, mBall)) {
         return;
     }
 
@@ -463,10 +511,10 @@ void PlayState::testCollision(GameEngine *game, Paddle& mPaddle, Ball& mBall)
     float normalizedRelativeIntersectionX{(relativeIntersectX / (paddle.getWidth() / 2))};
     float bounceAngle{normalizedRelativeIntersectionX * (3 * 3.14) / 12};
 
-    std::cout << intersectX << std::endl;
+    /*std::cout << intersectX << std::endl;
     std::cout << relativeIntersectX << std::endl;
     std::cout << normalizedRelativeIntersectionX << std::endl;
-    std::cout << bounceAngle << std::endl << std::endl;
+    std::cout << bounceAngle << std::endl << std::endl;*/
 
     int ballVx{mBall.getVelocity() * sin(bounceAngle)};
     int ballVy{mBall.getVelocity() * cos(bounceAngle)};
@@ -476,16 +524,16 @@ void PlayState::testCollision(GameEngine *game, Paddle& mPaddle, Ball& mBall)
 
     ballVx = (mBall.x() < mPaddle.x()) ? -ballVx : ballVx;
 
-    std::cout << ballVx << ", " << ballVy << std::endl;
+    //std::cout << ballVx << ", " << ballVy << std::endl;
 
     mBall.setVelocity(ballVx, -ballVy);
 
-    if (isSoundEnabled()) {
+    if (IsSoundEnabled()) {
         sounds.at(SoundEffect::PADDLE_COLLISION).play();
     }
 }
 
-void PlayState::testCollision(GameEngine *game, Shield& mShield, Ball& mBall)
+void PlayState::TestCollision(GameEngine *game, Shield& mShield, Ball& mBall)
 {
     //std::cout << "PlayState testCollision() paddle" << std::endl;
 
@@ -497,16 +545,16 @@ void PlayState::testCollision(GameEngine *game, Shield& mShield, Ball& mBall)
 
     mShield.Disable();
 
-    if (isSoundEnabled()) {
+    if (IsSoundEnabled()) {
         sounds.at(SoundEffect::SHIELD_BOUNCE).play();
     }
 }
 
-void PlayState::testCollision(GameEngine *game, Brick& mBrick, Ball& mBall)
+void PlayState::TestCollision(GameEngine *game, Brick& mBrick, Ball& mBall)
 {
     //std::cout << "PlayState testCollision() brick" << std::endl;
 
-    if (!isIntersecting(mBrick, mBall)) {
+    if (!IsIntersecting(mBrick, mBall)) {
         return;
     }
 
@@ -514,7 +562,7 @@ void PlayState::testCollision(GameEngine *game, Brick& mBrick, Ball& mBall)
         mBrick.destroy();
     }
 
-    playerScore += 5;
+    playerScore += ballPoints;
 
     // Calculate intersections of ball/brick
     float overlapLeft{mBall.right() - mBrick.left()};
@@ -543,16 +591,16 @@ void PlayState::testCollision(GameEngine *game, Brick& mBrick, Ball& mBall)
         }
     }
 
-    if (isSoundEnabled()) {
+    if (IsSoundEnabled()) {
         sounds.at(SoundEffect::BRICK_COLLISION).play();
     }
 }
 
-void PlayState::testCollision(GameEngine *game, Brick& mBrick, Projectile& mProjectile)
+void PlayState::TestCollision(GameEngine *game, Brick& mBrick, Projectile& mProjectile)
 {
     //std::cout << "PlayState testCollision() brick" << std::endl;
 
-    if (!isIntersecting(mBrick, mProjectile)) {
+    if (!IsIntersecting(mBrick, mProjectile)) {
         return;
     }
 
@@ -561,31 +609,48 @@ void PlayState::testCollision(GameEngine *game, Brick& mBrick, Projectile& mProj
 
     playerScore += 3;
 
-    if (isSoundEnabled()) {
+    if (IsSoundEnabled()) {
         sounds.at(SoundEffect::BRICK_COLLISION).play();
     }
 }
 
-void PlayState::testCollision(GameEngine *game, Paddle& mPaddle, Powerup& mPowerup)
+void PlayState::TestCollision(GameEngine *game, Paddle& mPaddle, Powerup& mPowerup)
 {
     //std::cout << "PlayState testCollision() paddle" << std::endl;
 
-    if (!isIntersecting(mPaddle, mPowerup)) {
+    if (!IsIntersecting(mPaddle, mPowerup)) {
         return;
     }
 
     mPowerup.destroy();
 
-    int n = std::rand() % 7;
+    if (IsSoundEnabled()) {
+        sounds.at(SoundEffect::GAIN_POWERUP).play();
+    }
+
+    ApplyPowerup(game);
+}
+
+void PlayState::ApplyPowerup(GameEngine *game)
+{
+    int n = std::rand() % 8;
+
     switch (n) {
         case 0:
-            numLives++;
+            if (playerLives < 4) {
+                playerLives++;
+            } else {
+                playerScore += 30;
+            }
+
             break;
         case 1:
-            paddle.setSize(paddle.getWidth() + 15, paddle.getHeight());
-            paddle.setPos(paddle.x() + 0, paddle.y());
-            paddle.shape.setOrigin(paddle.getWidth() / 2, paddle.getHeight() / 2);
-            balls.front().setPos(balls.front().x() - 0, balls.front().y());
+            if (!paddle.IsExpanded()) {
+                paddle.Expand();
+            } else {
+                playerScore += 30;
+            }
+
             break;
         case 2:
             for (auto& ball : balls) {
@@ -600,59 +665,27 @@ void PlayState::testCollision(GameEngine *game, Paddle& mPaddle, Powerup& mPower
             paddle.setVelocity(paddle.getVelocity() + 2);
             break;
         case 5:
-            shield.Enable();
+            if (!shield.IsEnabled()) {
+                shield.Enable();
+            } else {
+                playerScore += 30;
+            }
+
             break;
         case 6:
-            shield.Enable();
             for (auto& brick : bricks) {
                 brick.setPos(brick.x(), brick.y() + brick.getHeight());
             }
-            if (isSoundEnabled()) {
+            if (IsSoundEnabled()) {
                 sounds.at(SoundEffect::BRICKS_MOVE_DOWN).play();
             }
+            break;
+        case 7:
+            paddle.EnableLaser();
             break;
         default:
             break;
     }
-
-    if (isSoundEnabled()) {
-        sounds.at(GAIN_POWERUP).play();
-    }
-}
-
-void PlayState::playBrickGridAnimation(GameEngine *game, const int numBricksX, const int numBricksY)
-{
-    for (int i{0}; i < numBricksY; i += 1) {
-        for (int j{i}; j < numBricksX; j++) {
-            bricks.at(j).setVisibility(true);
-            //std::cout << j << ", " << i << std::endl;
-        }
-
-        game->getWindow().clear(sf::Color::Black);
-
-        game->getWindow().draw(paddle.shape);
-
-        for (auto& brick : bricks) {
-            if (brick.isVisible()) {
-                game->getWindow().draw(brick.shape);
-                //game->getWindow().draw(brick.shadow);
-                return;
-            }
-        }
-
-        game->getWindow().display();
-    }
-}
-
-bool PlayState::allBricksVisible() const noexcept
-{
-    for (auto &brick : bricks) {
-        if (!brick.isVisible()) {
-            return false;
-        }
-    }
-
-    return true;
 }
 
 void PlayState::LoadResources(GameEngine *game)
@@ -677,12 +710,17 @@ void PlayState::LoadResources(GameEngine *game)
         #endif
     }
 
+    // Set up background vector
+    for (int i{0}; i < 10; i++) {
+        background.emplace_back(sf::RectangleShape());
+    }
+
     std::cout << "Resources loaded" << std::endl;
 
-    loadObjects(game);
+    LoadObjects(game);
 }
 
-void PlayState::loadObjects(GameEngine *game)
+void PlayState::LoadObjects(GameEngine *game)
 {
     std::cout << "Loading PlayState objects..." << std::endl;
 
@@ -691,66 +729,72 @@ void PlayState::loadObjects(GameEngine *game)
     const int WINDOW_Y = game->getWindowHeight();
 
     // Set up left border corner shape
-    borderCornerLeft.setPosition(0, HUD_Y);
-    borderCornerLeft.setSize({20, 20});
-    borderCornerLeft.setTexture(&game->resourceMan.GetTexture("border_corner_left.png"));
-    borderCornerLeft.setOrigin(0, 0);
+    background.at(BackgroundObject::BORDER_CORNER_LEFT).setPosition(0, HUD_Y);
+    background.at(BackgroundObject::BORDER_CORNER_LEFT).setSize({20, 20});
+    background.at(BackgroundObject::BORDER_CORNER_LEFT).setTexture(&game->resourceMan.GetTexture("border_corner_left.png"));
+    background.at(BackgroundObject::BORDER_CORNER_LEFT).setOrigin(0, 0);
 
-    const int CORNER_LEFT_X = borderCornerLeft.getSize().x;
-    const int CORNER_LEFT_Y = borderCornerLeft.getSize().y;
+    const int CORNER_LEFT_X = background.at(BackgroundObject::BORDER_CORNER_LEFT).getSize().x;
+    const int CORNER_LEFT_Y = background.at(BackgroundObject::BORDER_CORNER_LEFT).getSize().y;
 
     // Set up right border corner shape
-    borderCornerRight.setPosition(WINDOW_X - CORNER_LEFT_X, 30);
-    borderCornerRight.setSize({20, 20});
-    borderCornerRight.setTexture(&game->resourceMan.GetTexture("border_corner_right.png"));
-    borderCornerRight.setOrigin(0, 0);
+    background.at(BackgroundObject::BORDER_CORNER_RIGHT).setPosition(WINDOW_X - CORNER_LEFT_X, 30);
+    background.at(BackgroundObject::BORDER_CORNER_RIGHT).setSize({20, 20});
+    background.at(BackgroundObject::BORDER_CORNER_RIGHT).setTexture(&game->resourceMan.GetTexture("border_corner_right.png"));
+    background.at(BackgroundObject::BORDER_CORNER_RIGHT).setOrigin(0, 0);
 
-    const int CORNER_RIGHT_X = borderCornerRight.getSize().x;
-    const int CORNER_RIGHT_Y = borderCornerRight.getSize().y;
+    const int CORNER_RIGHT_X = background.at(BackgroundObject::BORDER_CORNER_RIGHT).getSize().x;
+    const int CORNER_RIGHT_Y = background.at(BackgroundObject::BORDER_CORNER_RIGHT).getSize().y;
 
     // Set up top border shape
-    borderTop.setPosition(CORNER_LEFT_X, HUD_Y);
-    borderTop.setSize({WINDOW_X - CORNER_LEFT_X - CORNER_RIGHT_X, 20});
-    borderTop.setTexture(&game->resourceMan.GetTexture("border_top.png"));
-    borderTop.setOrigin(0, 0);
+    background.at(BackgroundObject::BORDER_TOP).setPosition(CORNER_LEFT_X, HUD_Y);
+    background.at(BackgroundObject::BORDER_TOP).setSize({WINDOW_X - CORNER_LEFT_X - CORNER_RIGHT_X, 20});
+    background.at(BackgroundObject::BORDER_TOP).setTexture(&game->resourceMan.GetTexture("border_top.png"));
+    background.at(BackgroundObject::BORDER_TOP).setOrigin(0, 0);
 
-    const int BORDER_TOP_Y = borderTop.getSize().y;
+    const int BORDER_TOP_Y = background.at(BackgroundObject::BORDER_TOP).getSize().y;
 
     // Set up left border shape
-    borderLeft.setPosition(0, HUD_Y + CORNER_LEFT_Y);
-    borderLeft.setSize({20, WINDOW_Y - HUD_Y - CORNER_LEFT_Y});
-    borderLeft.setTexture(&game->resourceMan.GetTexture("border_side.png"));
-    borderLeft.setOrigin(0, 0);
+    background.at(BackgroundObject::BORDER_LEFT).setPosition(0, HUD_Y + CORNER_LEFT_Y);
+    background.at(BackgroundObject::BORDER_LEFT).setSize({20, WINDOW_Y - HUD_Y - CORNER_LEFT_Y});
+    background.at(BackgroundObject::BORDER_LEFT).setTexture(&game->resourceMan.GetTexture("border_side.png"));
+    background.at(BackgroundObject::BORDER_LEFT).setOrigin(0, 0);
 
     // Set up right border shape
-    borderRight.setPosition(WINDOW_X - CORNER_LEFT_X, HUD_Y + CORNER_RIGHT_Y);
-    borderRight.setSize({20, WINDOW_Y - HUD_Y - CORNER_RIGHT_Y});
-    borderRight.setTexture(&game->resourceMan.GetTexture("border_side.png"));
-    borderRight.setOrigin(0, 0);
+    background.at(BackgroundObject::BORDER_RIGHT).setPosition(WINDOW_X - CORNER_LEFT_X, HUD_Y + CORNER_RIGHT_Y);
+    background.at(BackgroundObject::BORDER_RIGHT).setSize({20, WINDOW_Y - HUD_Y - CORNER_RIGHT_Y});
+    background.at(BackgroundObject::BORDER_RIGHT).setTexture(&game->resourceMan.GetTexture("border_side.png"));
+    background.at(BackgroundObject::BORDER_RIGHT).setOrigin(0, 0);
 
     // Set up left shield shape
-    shieldLeft.setPosition(0, WINDOW_Y - 50);
-    shieldLeft.setSize({25, 20});
-    shieldLeft.setTexture(&game->resourceMan.GetTexture("shield_left.png"));
-    shieldLeft.setOrigin(0, 0);
+    background.at(BackgroundObject::SHIELD_LEFT).setPosition(0, WINDOW_Y - 50);
+    background.at(BackgroundObject::SHIELD_LEFT).setSize({25, 20});
+    background.at(BackgroundObject::SHIELD_LEFT).setTexture(&game->resourceMan.GetTexture("shield_left.png"));
+    background.at(BackgroundObject::SHIELD_LEFT).setOrigin(0, 0);
 
     // Set up right shield shape
-    shieldRight.setPosition(WINDOW_X - 25, WINDOW_Y - 50);
-    shieldRight.setSize({25, 20});
-    shieldRight.setTexture(&game->resourceMan.GetTexture("shield_right.png"));
-    shieldRight.setOrigin(0, 0);
+    background.at(BackgroundObject::SHIELD_RIGHT).setPosition(WINDOW_X - 25, WINDOW_Y - 50);
+    background.at(BackgroundObject::SHIELD_RIGHT).setSize({25, 20});
+    background.at(BackgroundObject::SHIELD_RIGHT).setTexture(&game->resourceMan.GetTexture("shield_right.png"));
+    background.at(BackgroundObject::SHIELD_RIGHT).setOrigin(0, 0);
 
     // Set up top shadow shape
-    shadowTop.setPosition(CORNER_LEFT_X, HUD_Y + BORDER_TOP_Y);
-    shadowTop.setSize({WINDOW_X - CORNER_LEFT_X - CORNER_RIGHT_X, 20});
-    shadowTop.setFillColor({0, 0, 0, 127});
-    shadowTop.setOrigin(0, 0);
+    background.at(BackgroundObject::SHADOW_TOP).setPosition(CORNER_LEFT_X, HUD_Y + BORDER_TOP_Y);
+    background.at(BackgroundObject::SHADOW_TOP).setSize({WINDOW_X - CORNER_LEFT_X - CORNER_RIGHT_X, 20});
+    background.at(BackgroundObject::SHADOW_TOP).setFillColor({0, 0, 0, 127});
+    background.at(BackgroundObject::SHADOW_TOP).setOrigin(0, 0);
 
     // Set up left shadow shape
-    shadowLeft.setPosition(20, HUD_Y + BORDER_TOP_Y + 20);
-    shadowLeft.setSize({20, WINDOW_Y - HUD_Y - BORDER_TOP_Y});
-    shadowLeft.setFillColor({0, 0, 0, 127});
-    shadowLeft.setOrigin(0, 0);
+    background.at(BackgroundObject::SHADOW_LEFT).setPosition(20, HUD_Y + BORDER_TOP_Y + 20);
+    background.at(BackgroundObject::SHADOW_LEFT).setSize({20, WINDOW_Y - HUD_Y - BORDER_TOP_Y});
+    background.at(BackgroundObject::SHADOW_LEFT).setFillColor({0, 0, 0, 127});
+    background.at(BackgroundObject::SHADOW_LEFT).setOrigin(0, 0);
+
+    // Set up background shape
+    background.at(BackgroundObject::BACKGROUND).setPosition(0, 0);
+    background.at(BackgroundObject::BACKGROUND).setSize({WINDOW_X, WINDOW_Y});
+    background.at(BackgroundObject::BACKGROUND).setTexture(&game->resourceMan.GetTexture("hexagon_pattern.png"));
+    background.at(BackgroundObject::BACKGROUND).setOrigin(0, 0);
 
     std::cout << "PlayState objects loaded" << std::endl;
 }
