@@ -11,11 +11,8 @@
 //const float PlayState::ftStep = 1.f;
 //const float PlayState::ftSlice = 1.f;
 
-const int PlayState::initPaddleX = 480 / 2;
-const int PlayState::initPaddleY = 620 - 70;
-
-const int PlayState::initBallX = 620 - 64;
-const int PlayState::initBallY = 580 - 64;
+const sf::Vector2f PlayState::initPaddlePos = {480 / 2, 620 - 70};
+const sf::Vector2f PlayState::initBallPos = {620 - 64, 580 - 6};
 
 const int PlayState::brickWidth = 40;
 const int PlayState::brickHeight = 20;
@@ -41,7 +38,7 @@ PlayState::PlayState() :
     m_isGameRunning(true),
     m_isBallLaunched(false),
     shield(25, 580),
-    paddle(100, 400, 150/*initPaddleX, initPaddleY, paddleWidth, paddleHeight, paddleColour*/)
+    paddle(100, 400, 150/*initPaddlePos.x, initPaddlePos.y, paddleWidth, paddleHeight, paddleColour*/)
     //brickGrid(countBricksX, countBricksY, brickWidth, brickHeight)
     //lastFt{0.f},
     //currentSlice{0.f}
@@ -113,7 +110,7 @@ void PlayState::HandleEvents(GameEngine *game)
             bricks.clear();
         } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::R) {
             for (auto& brick : bricks) {
-                brick.setPos(brick.x(), brick.y() + brick.getHeight());
+                brick.setPos({brick.x(), brick.y() + brick.getHeight()});
                 if (IsSoundEnabled()) {
                     sounds.at(SoundEffect::BRICKS_MOVE_DOWN).play();
                 }
@@ -139,52 +136,29 @@ void PlayState::HandleEvents(GameEngine *game)
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
         game->Quit();
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
-        game->pushState(/*PausedState::Instance()*/new PausedState());
+        //game->pushState(/*PausedState::Instance()*/new PausedState());
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) {
-
-        //if (!keyAlreadyPressed) {
-
-            //keyAlreadyPressed = true;
-
-            if (balls.size() == 1) {
-                if (!IsBallLaunched()) {
-                    LaunchBall();
-                    balls.front().setVelocity(0, -balls.front().getVelocity());
-                }
+        if (balls.size() == 1) {
+            if (!IsBallLaunched()) {
+                LaunchBall();
+                balls.front().setVelocity({0, -balls.front().getSpeed()});
             }
-
-            /*if (IsSoundEnabled()) {
-                shootProjectileSound.play();
-            }
-
-            projectiles.emplace_back(paddle.x() - (paddle.getWidth() / 2) + 8,
-                paddle.y() - paddle.getHeight());
-            projectiles.emplace_back(paddle.x() + (paddle.getWidth() / 2) - 8,
-                paddle.y() - paddle.getHeight());*/
-            //}
-
+        }
     }
-
-    /*if (sf::Keyboard::isKeyReleased(sf::Keyboard::Key::S)) {
-        keyAlreadyPressed = false;
-    }*/
 
     if (!playerLives) {
         NewGame(game);
     }
 
     if (bricks.empty()) {
-        //if (powerups.empty()) {
-            AddBonusPoints(game, playerLevel);
-            LoadLevel(game, playerLevel + 1);
-        //}
-        //balls.clear();
+        AddBonusPoints(game, playerLevel);
+        LoadLevel(game, playerLevel + 1);
     }
 
     if (!shield.IsEnabled()) {
         // Destroy all missed balls
         for (auto& ball : balls) {
-            if (ball.y() > /*shield.top()*/game->getWindowHeight()) {
+            if (ball.y() > /*shield.top()*/game->getWindowSize().y) {
                 ball.destroy();
             }
         }
@@ -250,27 +224,27 @@ void PlayState::Update(GameEngine *game)
 
     if (IsBallLaunched()) {
         for (auto& ball : balls) {
-            ball.update(game->getWindowWidth(), game->getWindowHeight());
+            ball.update(game->getWindowSize());
         }
     } else {
-        balls.front().setPos(paddle.x() - balls.front().getRadius() / 2, paddle.y() - ((balls.front().getRadius() * 2) + 5));
+        balls.front().setPos({paddle.x() - balls.front().getRadius() / 2, paddle.y() - ((balls.front().getRadius() * 2) + 5)});
     }
 
     for (auto& powerup : powerups) {
-        powerup.update(game->getWindowWidth(), game->getWindowHeight());
+        powerup.update(game->getWindowSize());
         //std::cout << "Updating powerup" << std::endl;
     }
 
     for (auto& projectile : projectiles) {
-        projectile.update(game->getWindowWidth(), game->getWindowHeight());
+        projectile.update(game->getWindowSize());
         //std::cout << "Updating projectile" << std::endl;
     }
 
     /*currentSlice += lastFt;
     for(; currentSlice >= ftSlice; currentSlice -= ftSlice) {*/
-        //ball.update(/*ftStep, */game->getWindowWidth(), game->getWindowHeight());
+        //ball.update(/*ftStep, */game->getWindowSize());
 
-        paddle.update(/*ftStep, */game->getWindowWidth(), game->getWindowHeight());
+        paddle.update(/*ftStep, */game->getWindowSize());
 
         // Remove destroyed blocks from blocks vector
         bricks.erase(
@@ -305,7 +279,7 @@ void PlayState::Update(GameEngine *game)
         LaunchBall();
         balls.emplace_back(game, paddle.x() - balls.back().getRadius() / 2, paddle.y() - 20);
         //balls.back().Init(game);
-        balls.back().setVelocity(0, -32);
+        balls.back().setVelocity({0, -32});
     }
 
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::G)) {
@@ -338,7 +312,7 @@ void PlayState::Draw(GameEngine *game)
     }
 
     if (!IsBallLaunched()) {
-        balls.front().setPos(paddle.x() - balls.front().getRadius() / 2, paddle.y() - ((balls.front().getRadius() * 2) + 5));
+        balls.front().setPos({paddle.x() - balls.front().getRadius() / 2, paddle.y() - ((balls.front().getRadius() * 2) + 5)});
     }
 
     // Draw balls
@@ -404,14 +378,14 @@ void PlayState::NewGame(GameEngine *game)
     GenerateNewBrickGrid(game, playerLevel);
 
     paddle.reset();
-    paddle.setPos(initPaddleX, initPaddleY);
+    paddle.setPos(initPaddlePos.x, initPaddlePos.y);
 
     powerups.clear();
     projectiles.clear();
 
     balls.clear();
-    balls.emplace_back(game, initBallX, initBallY);
-    balls.front().setPos(initPaddleX, paddle.top() - (balls.front().getRadius() * 2) + 1);
+    balls.emplace_back(game, initBallPos.x, initBallPos.y);
+    balls.front().setPos({initPaddlePos.x, paddle.top() - (balls.front().getRadius() * 2) + 1});
 
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::NEW_GAME).play();
@@ -421,16 +395,15 @@ void PlayState::NewGame(GameEngine *game)
 
 void PlayState::GenerateNewBrickGrid(GameEngine *game, const int level)
 {
-    std::cout << level << std::endl;
+    //std::cout << level << std::endl;
 
     bricks.clear();
 
-    for (int i{0}; i < levels.at(level - 1).size(); i++) {
+    for (auto& gridCell : levels.at(level - 1)) {
         bricks.emplace_back(
             game,
-            (levels.at(level - 1).at(i).x + 1) * brickWidth,
-            (levels.at(level - 1).at(i).y * brickHeight) + 125,
-            levels.at(level - 1).at(i).colour,
+            sf::Vector2f{(gridCell.x + 1) * brickWidth, (gridCell.y * brickHeight) + 125},
+            gridCell.colour,
             0);
     }
 }
@@ -469,15 +442,15 @@ void PlayState::LoadLevel(GameEngine *game, const int level)
     playerLevel = (level < 6) ? level : 1;
 
     paddle.reset();
-    paddle.setPos(initPaddleX, initPaddleY);
+    paddle.setPos(initPaddlePos.x, initPaddlePos.y);
 
     powerups.clear();
     projectiles.clear();
 
     DockBall();
     balls.clear();
-    balls.emplace_back(game, initBallX, initBallY);
-    balls.front().setPos(initPaddleX, paddle.top() - (balls.front().getRadius() * 2) + 1);
+    balls.emplace_back(game, initBallPos.x, initBallPos.y);
+    balls.front().setPos({initPaddlePos.x, paddle.top() - (balls.front().getRadius() * 2) + 1});
 
     if (/*isPlayerPlaying()*/ 1) {
         if (IsSoundEnabled()) {
@@ -511,22 +484,12 @@ void PlayState::TestCollision(GameEngine *game, Paddle& mPaddle, Ball& mBall)
     float normalizedRelativeIntersectionX{(relativeIntersectX / (paddle.getWidth() / 2))};
     float bounceAngle{normalizedRelativeIntersectionX * (3 * 3.14) / 12};
 
-    /*std::cout << intersectX << std::endl;
-    std::cout << relativeIntersectX << std::endl;
-    std::cout << normalizedRelativeIntersectionX << std::endl;
-    std::cout << bounceAngle << std::endl << std::endl;*/
+    sf::Vector2f newBallVelocity;
+    newBallVelocity.x = mBall.getSpeed() * sin(bounceAngle);
+    newBallVelocity.y = -mBall.getSpeed() * cos(bounceAngle);
+    newBallVelocity.x = (mBall.x() < mPaddle.x()) ? -newBallVelocity.x : newBallVelocity.x;
 
-    int ballVx{mBall.getVelocity() * sin(bounceAngle)};
-    int ballVy{mBall.getVelocity() * cos(bounceAngle)};
-
-    mBall.setVelocityX(ballVx);
-    mBall.setVelocityY(ballVy);
-
-    ballVx = (mBall.x() < mPaddle.x()) ? -ballVx : ballVx;
-
-    //std::cout << ballVx << ", " << ballVy << std::endl;
-
-    mBall.setVelocity(ballVx, -ballVy);
+    mBall.setVelocity(newBallVelocity);
 
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::PADDLE_COLLISION).play();
@@ -541,7 +504,7 @@ void PlayState::TestCollision(GameEngine *game, Shield& mShield, Ball& mBall)
         return;
     }
 
-    mBall.setVelocity(mBall.getVelocityX(), -mBall.getVelocityY());
+    mBall.setVelocity({mBall.getVelocity().x, -mBall.getVelocity().y});
 
     mShield.Disable();
 
@@ -576,13 +539,17 @@ void PlayState::TestCollision(GameEngine *game, Brick& mBrick, Ball& mBall)
     float minOverlapX{ballFromLeft ? overlapLeft : overlapRight};
     float minOverlapY{ballFromTop ? overlapTop : overlapBottom};
 
+    sf::Vector2f newBallVelocity;
+
     if (abs(minOverlapX) < abs(minOverlapY)) {
-        mBall.setVelocityX(-mBall.getVelocityX());
-        mBall.setVelocityY(mBrick.y() < mBall.y() ? abs(mBall.getVelocityY()) : -abs(mBall.getVelocityY()));
+        newBallVelocity.x = -mBall.getVelocity().x;
+        newBallVelocity.y = (mBrick.y() < mBall.y()) ? abs(mBall.getVelocity().y) : -abs(mBall.getVelocity().y);
     } else {
-        mBall.setVelocityX(mBall.x() < mBrick.x() ? -mBall.getVelocityX() : mBall.getVelocityX());
-        mBall.setVelocityY(ballFromTop ? -abs(mBall.getVelocityY()) : abs(mBall.getVelocityY()));
+        newBallVelocity.x = (mBall.x() < mBrick.x()) ? -mBall.getVelocity().x : mBall.getVelocity().x;
+        newBallVelocity.y = ballFromTop ? -abs(mBall.getVelocity().y) : abs(mBall.getVelocity().y);
     }
+
+    mBall.setVelocity(newBallVelocity);
 
     if (mBrick.isDestroyed()) {
         if (!((std::rand() % 100) % powerupProbability)) {
@@ -659,10 +626,10 @@ void PlayState::ApplyPowerup(GameEngine *game)
             break;
         case 3:
             balls.emplace_back(game, paddle.x() - balls.back().radius() / 2, paddle.y() - 20);
-            balls.back().setVelocity(0, -balls.back().getSpeed());
+            balls.back().setVelocity({0, -balls.back().getSpeed()});
             break;
         case 4:
-            paddle.setVelocity(paddle.getVelocity() + 2);
+            paddle.setVelocity(paddle.getSpeed() + 2);
             break;
         case 5:
             if (!shield.IsEnabled()) {
@@ -674,7 +641,7 @@ void PlayState::ApplyPowerup(GameEngine *game)
             break;
         case 6:
             for (auto& brick : bricks) {
-                brick.setPos(brick.x(), brick.y() + brick.getHeight());
+                brick.setPos({brick.x(), brick.y() + brick.getHeight()});
             }
             if (IsSoundEnabled()) {
                 sounds.at(SoundEffect::BRICKS_MOVE_DOWN).play();
@@ -715,18 +682,18 @@ void PlayState::LoadResources(GameEngine *game)
         background.emplace_back(sf::RectangleShape());
     }
 
-    std::cout << "Resources loaded" << std::endl;
+    //std::cout << "Resources loaded" << std::endl;
 
     LoadObjects(game);
 }
 
 void PlayState::LoadObjects(GameEngine *game)
 {
-    std::cout << "Loading PlayState objects..." << std::endl;
+    //std::cout << "Loading PlayState objects..." << std::endl;
 
     const int HUD_Y = hud.getScoreBackgroundHeight();
-    const int WINDOW_X = game->getWindowWidth();
-    const int WINDOW_Y = game->getWindowHeight();
+    const int WINDOW_X = game->getWindowSize().x;
+    const int WINDOW_Y = game->getWindowSize().y;
 
     // Set up left border corner shape
     background.at(BackgroundObject::BORDER_CORNER_LEFT).setPosition(0, HUD_Y);
@@ -796,5 +763,5 @@ void PlayState::LoadObjects(GameEngine *game)
     background.at(BackgroundObject::BACKGROUND).setTexture(&game->resourceMan.GetTexture("hexagon_pattern.png"));
     background.at(BackgroundObject::BACKGROUND).setOrigin(0, 0);
 
-    std::cout << "PlayState objects loaded" << std::endl;
+    //std::cout << "PlayState objects loaded" << std::endl;
 }
