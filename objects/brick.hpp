@@ -5,24 +5,46 @@
 #include <SFML\Graphics.hpp>
 
 #include "rectangle.hpp"
-
-constexpr int brickWidth{45};
-constexpr int brickHeight{15};
-constexpr int countBricksX{14};
-constexpr int countBricksY{8};
+#include "..\stateman\gameEngine.hpp"
 
 class Brick : public Rectangle
 {
 public:
-    Brick(float posX, float posY);
+    Brick(GameEngine *game, const sf::Vector2f position, const sf::Color colour, const int type);
     ~Brick();
 
-    bool isDestroyed;
+    void Init(GameEngine *game);
+
+    void setPos(const sf::Vector2f newPosition);
+
+    const bool isVisible() const noexcept;
+    void setVisibility(const bool isVisible) noexcept;
+
+    int GetType() const noexcept { return m_type; }
+
+    int getWidth() const noexcept { return m_width; }
+    int getHeight() const noexcept { return m_height; }
+
+    bool isDestroyed() const noexcept;
+    void destroy() noexcept;
+    
+    //Sprite sprite;
+
+    sf::RectangleShape shadow;
 
 private:
     sf::Vector2f velocity;
-    //Texture texture;
-    //Sprite sprite;
+
+    int m_width;
+    int m_height;
+    int m_type;
+
+    bool m_isDestroyed;
+    bool m_isVisible;
+
+    static const int width;
+    static const int height;
+    static const int shadowOpacity;
 };
 
 #endif // BRICK_HPP
