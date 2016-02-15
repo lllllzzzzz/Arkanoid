@@ -15,7 +15,7 @@
 #include "..\objects\shield.hpp"
 #include "..\levels\levels.hpp"
 //#include "..\objects\powerupExtraLife.hpp"
-#include "pausedState.hpp"
+//#include "pausedState.hpp"
 
 /*namespace Arkanoid
 {*/
@@ -26,29 +26,29 @@
         ~PlayState();
 
         void Init(GameEngine *game);
-        void Cleanup(GameEngine *game);
+        void Cleanup();
 
         void Pause();
         void Resume();
 
-        void HandleEvents(GameEngine *game);
-        void Update(GameEngine *game);
-        void Draw(GameEngine *game);
+        void HandleEvents();
+        void Update();
+        void Draw();
 
-        void LoadResources(GameEngine *game);
-        void LoadObjects(GameEngine *game);
+        void LoadResources();
+        void LoadObjects();
 
-        void NewGame(GameEngine *game);
-        void LoadLevel(GameEngine *game, const int level);
-        void GenerateNewBrickGrid(GameEngine *game, const int level);
+        void NewGame();
+        void LoadLevel(const int level);
+        void GenerateNewBrickGrid(const int level);
 
         bool IsGameRunning() const noexcept { return m_isGameRunning; }
         void PauseGame() { m_isGameRunning = false; }
         void ResumeGame() { m_isGameRunning = true; }
 
-        void ApplyPowerup(GameEngine *game);
-        void RemovePowerups(GameEngine *game);
-        void AddBonusPoints(GameEngine *game, const int level);
+        void ApplyPowerup();
+        void RemovePowerups();
+        void AddBonusPoints(const int level);
 
         //int GainLives(const int numLives) { return playerLives += numLives; }
 
@@ -62,11 +62,11 @@
 
         template <class T1, class T2>
         bool IsIntersecting(T1& mA, T2& mB);
-        void TestCollision(GameEngine *game, Paddle& mPaddle, Ball& mBall);
-        void TestCollision(GameEngine *game, Brick& mBrick, Ball& mBall);
-        void TestCollision(GameEngine *game, Paddle& mPaddle, Powerup& mPowerup);
-        void TestCollision(GameEngine *game, Brick& mBrick, Projectile& mProjectile);
-        void TestCollision(GameEngine *game, Shield& mShield, Ball& mBall);
+        void TestCollision(Paddle& mPaddle, Ball& mBall);
+        void TestCollision(Brick& mBrick, Ball& mBall);
+        void TestCollision(Paddle& mPaddle, Powerup& mPowerup);
+        void TestCollision(Brick& mBrick, Projectile& mProjectile);
+        void TestCollision(Shield& mShield, Ball& mBall);
 
         static PlayState* Instance() {
             return &m_PlayState;
@@ -76,12 +76,12 @@
         //std::chrono::high_resolution_clock::timePoint2;
 
     private:
-        typedef struct
-        {
-            int x;
-            int y;
+        template <typename T>
+        struct brickData {
+            T x;
+            T y;
             sf::Color colour;
-        } brickData;
+        };
 
         enum /*class*/ SoundEffect : int {
             BRICK_COLLISION = 0,
@@ -108,6 +108,7 @@
         };
 
         static PlayState m_PlayState;
+        GameEngine *m_engine;
 
         std::vector<sf::RectangleShape> background;
         std::vector<sf::Sound> sounds;
@@ -139,27 +140,20 @@
 
         bool keyAlreadyPressed{false};
 
-        static const int initBallX;
-        static const int initBallY;
+        static const sf::Vector2f initBallPos;
         static const float ballRadius;
         static const sf::Color ballColour;
 
-        static const int initPaddleX;
-        static const int initPaddleY;
+        static const sf::Vector2f BRICK_SIZE;
+        static const int POINTS_BALL;
+        static const int POINTS_PROJECTILE;
+        static const int DEFAULT_PLAYER_LIVES;
+        static const int POWERUP_PROBABILITY;
+        static const int TOTAL_NUMBER_OF_POWERUPS;
 
-        static const int brickWidth;
-        static const int brickHeight;
+        std::vector<brickData<double>> currentLevel;
 
-        static const int ballPoints;
-        static const int projectilePoints;
-
-        static const int playerLivesDefault;
-
-        static const int powerupProbability;
-
-        std::vector<brickData> currentLevel;
-
-        std::vector<brickData> level1 = {
+        std::vector<brickData<double>> level1 = {
             {1, 0, sf::Color::Green},
             {2, 0, sf::Color::Green},
             {3, 0, sf::Color::Green},
@@ -221,7 +215,7 @@
             {9, 5, sf::Color::Red},
         };
 
-        std::vector<brickData> level2 = {
+        std::vector<brickData<double>> level2 = {
             {0, 0, sf::Color::Blue},
             {1, 0, sf::Color::Blue},
             {2, 0, sf::Color::Blue},
@@ -265,7 +259,7 @@
             {5, 5, sf::Color::Red},
         };
 
-        std::vector<brickData> level3 = {
+        std::vector<brickData<double>> level3 = {
             {1, 0, sf::Color::Green},
             {2, 0, sf::Color::Green},
             {3, 0, sf::Color::Green},
@@ -315,7 +309,7 @@
             {9, 5, sf::Color::Cyan},
         };
 
-        std::vector<brickData> level4 = {
+        std::vector<brickData<double>> level4 = {
             {0, 0, sf::Color::Red},
             {1, 0, sf::Color::Red},
             {3, 0, sf::Color::Red},
@@ -368,7 +362,7 @@
             {10, 7, sf::Color::Blue},
         };
 
-        std::vector<brickData> level5 = {
+        std::vector<brickData<double>> level5 = {
             {1, 0, sf::Color::Blue},
             {2, 0, sf::Color::Blue},
             {3, 0, sf::Color::Blue},
@@ -422,7 +416,7 @@
             {9, 6, sf::Color::Blue},
         };
 
-        std::vector<std::vector<brickData>> levels;/* = {
+        std::vector<std::vector<brickData<double>>> levels;/* = {
             level1, level2, level3, level4, level5
         };*/
     };
