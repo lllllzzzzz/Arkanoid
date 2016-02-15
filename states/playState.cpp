@@ -8,6 +8,8 @@
 //#include <windows.h>
 #endif
 
+#define M_PI (3.14159265359)
+
 //const float PlayState::ftStep = 1.f;
 //const float PlayState::ftSlice = 1.f;
 
@@ -15,6 +17,7 @@ const sf::Vector2f PlayState::BRICK_SIZE = {40, 20};
 const int PlayState::POINTS_BALL = 5;
 const int PlayState::POINTS_PROJECTILE = 3;
 const int PlayState::DEFAULT_PLAYER_LIVES = 2;
+const int PlayState::MAXIMUM_REFLECTION_ANGLE = ((3 * M_PI) / 12);
 const int PlayState::POWERUP_PROBABILITY = 25;
 const int PlayState::TOTAL_NUMBER_OF_POWERUPS = 8;
 
@@ -23,17 +26,13 @@ PlayState PlayState::m_PlayState;
 //using namespace Arkanoid;
 
 PlayState::PlayState() :
-    levels{ level1, level2, level3, level4, level5 },
     highScore(0),
     playerLives(0),
     playerLevel(1),
     m_isPlayerPlaying(true),
     m_isSoundEnabled(true),
     m_isGameRunning(true),
-    m_isBallLaunched(false),
-    //shield(25, 580),
-    paddle()
-    //brickGrid(countBricksX, countBricksY, BRICK_SIZE.x, BRICK_SIZE.y)
+    m_isBallLaunched(false)
     //lastFt{0.f},
     //currentSlice{0.f}
 {
@@ -54,6 +53,7 @@ void PlayState::Init(GameEngine *game)
 {
     m_engine = game;
 
+    brickGrid.Init(m_engine);
     hud.Init(m_engine);
     paddle.Init(m_engine);
     shield.Init(m_engine);
@@ -87,9 +87,9 @@ void PlayState::HandleEvents()
     sf::Event event;
     while (m_engine->getWindow().pollEvent(event)) {
         if (event.type == sf::Event::LostFocus) {
-            PauseGame();
+            SetGameRunning(false);
         } else if (event.type == sf::Event::GainedFocus) {
-            ResumeGame();
+            SetGameRunning(true);
         }
 
         if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::S) {
@@ -105,19 +105,23 @@ void PlayState::HandleEvents()
             }
 
         } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::G) {
-            bricks.clear();
+            brickGrid.Clear();
         } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::R) {
+            /*
             for (auto& brick : bricks) {
-                brick.setPos({brick.x(), brick.y() + brick.getHeight()});
+                brick.setPos({brick.x(), brick.y() + brick.GetSize().y});
                 if (IsSoundEnabled()) {
                     sounds.at(SoundEffect::BRICKS_MOVE_DOWN).play();
                 }
             }
+            */
+            brickGrid.MoveDown();
         }
     }
 
     if (!IsGameRunning()) {
         return;
+
     }
 
     /*LaunchBall();
@@ -148,7 +152,7 @@ void PlayState::HandleEvents()
         NewGame();
     }
 
-    if (bricks.empty()) {
+    if (brickGrid.IsEmpty()) {
         AddBonusPoints(playerLevel);
         LoadLevel(playerLevel + 1);
     }
@@ -187,7 +191,7 @@ void PlayState::HandleEvents()
     // O(N*M) algorithm
     for (auto& ball : balls) {
         TestCollision(paddle, ball);
-        for (auto& brick : bricks) {
+        for (auto& brick : brickGrid.GetBricks()) {
             TestCollision(brick, ball);
         }
     }
@@ -199,7 +203,7 @@ void PlayState::HandleEvents()
 
     // Perform collision detection between projectiles and all bricks
     for (auto& projectile : projectiles) {
-        for (auto& brick : bricks) {
+        for (auto& brick : brickGrid.GetBricks()) {
             TestCollision(brick, projectile);
         }
     }
@@ -244,12 +248,7 @@ void PlayState::Update()
 
         paddle.update(/*ftStep, */m_engine->getWindowSize());
 
-        // Remove destroyed blocks from blocks vector
-        bricks.erase(
-            remove_if(begin(bricks), end(bricks),
-                [](const Brick& mBrick) { return mBrick.isDestroyed(); }),
-            end(bricks)
-        );
+        brickGrid.Update();
 
         // Remove destroyed balls from balls vector
         balls.erase(
@@ -302,7 +301,7 @@ void PlayState::Draw()
     m_engine->getWindow().draw(background.at(BackgroundObject::SHADOW_LEFT));
 
     // Draw bricks
-    for (auto& brick : bricks) {
+    for (auto& brick : brickGrid.GetBricks()) {
         if (brick.isVisible()) {
             m_engine->getWindow().draw(brick.shape);
             m_engine->getWindow().draw(brick.shadow);
@@ -373,10 +372,7 @@ void PlayState::NewGame()
     playerScore = 0;
     playerLives = DEFAULT_PLAYER_LIVES;
 
-    GenerateNewBrickGrid(playerLevel);
-
     paddle.reset();
-    //paddle.setPos({initPaddlePos.x, initPaddlePos.y});
 
     powerups.clear();
     projectiles.clear();
@@ -388,21 +384,6 @@ void PlayState::NewGame()
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::NEW_GAME).play();
         backgroundMusic.play();
-    }
-}
-
-void PlayState::GenerateNewBrickGrid(const int level)
-{
-    //std::cout << level << std::endl;
-
-    bricks.clear();
-
-    for (auto& gridCell : levels.at(level - 1)) {
-        bricks.emplace_back(
-            m_engine,
-            sf::Vector2f{(gridCell.x + 1) * BRICK_SIZE.x, (gridCell.y * BRICK_SIZE.y) + 125},
-            gridCell.colour,
-            0);
     }
 }
 
@@ -457,7 +438,49 @@ void PlayState::LoadLevel(const int level)
         }
     }
 
-    GenerateNewBrickGrid(playerLevel);
+    brickGrid.GenerateGrid(level);
+}
+
+sf::Vector2f PlayState::CalculatePaddleReflectionVector(Paddle& mPaddle, Ball& mBall)
+{
+    // Calculate angle of reflection of the ball
+    float relativeIntersectX{abs(mPaddle.x() - mBall.x()) - 4};
+    float normalisedRelativeIntersectX{(relativeIntersectX / (paddle.getSize().x / 2))};
+    float bounceAngle{normalisedRelativeIntersectX * /*MAXIMUM_REFLECTION_ANGLE*/(3 * M_PI) / 12};
+
+    sf::Vector2f newBallVelocity;
+    newBallVelocity.x = mBall.getSpeed() * sin(bounceAngle);
+    newBallVelocity.y = -mBall.getSpeed() * cos(bounceAngle);
+    newBallVelocity.x = (mBall.x() < mPaddle.x()) ? -newBallVelocity.x : newBallVelocity.x;
+
+    return newBallVelocity;
+}
+
+sf::Vector2f PlayState::CalculateBrickReflectionVector(Brick& mBrick, Ball& mBall)
+{
+    // Calculate intersections of ball/brick
+    float overlapLeft{mBall.right() - mBrick.left()};
+    float overlapRight{mBrick.right() - mBall.left()};
+    float overlapTop{mBall.bottom() - mBrick.top()};
+    float overlapBottom{mBrick.bottom() - mBall.top()};
+
+    bool ballFromLeft(abs(overlapLeft) < abs(overlapRight));
+    bool ballFromTop(abs(overlapTop) < abs(overlapBottom));
+
+    float minOverlapX{ballFromLeft ? overlapLeft : overlapRight};
+    float minOverlapY{ballFromTop ? overlapTop : overlapBottom};
+
+    sf::Vector2f newBallVelocity;
+
+    if (abs(minOverlapX) < abs(minOverlapY)) {
+        newBallVelocity.x = -mBall.getVelocity().x;
+        newBallVelocity.y = (mBrick.y() < mBall.y()) ? abs(mBall.getVelocity().y) : -abs(mBall.getVelocity().y);
+    } else {
+        newBallVelocity.x = (mBall.x() < mBrick.x()) ? -mBall.getVelocity().x : mBall.getVelocity().x;
+        newBallVelocity.y = ballFromTop ? -abs(mBall.getVelocity().y) : abs(mBall.getVelocity().y);
+    }
+
+    return newBallVelocity;
 }
 
 template <class T1, class T2>
@@ -477,16 +500,8 @@ void PlayState::TestCollision(Paddle& mPaddle, Ball& mBall)
         return;
     }
 
-    float relativeIntersectX{abs(mPaddle.x() - mBall.x()) - 4};
-    float normalisedRelativeIntersectX{(relativeIntersectX / (paddle.getSize().x / 2))};
-    float bounceAngle{normalisedRelativeIntersectX * (3 * 3.14) / 12};
-
-    sf::Vector2f newBallVelocity;
-    newBallVelocity.x = mBall.getSpeed() * sin(bounceAngle);
-    newBallVelocity.y = -mBall.getSpeed() * cos(bounceAngle);
-    newBallVelocity.x = (mBall.x() < mPaddle.x()) ? -newBallVelocity.x : newBallVelocity.x;
-
-    mBall.setVelocity(newBallVelocity);
+    // Set ball velocity to reflection vector
+    mBall.setVelocity(CalculatePaddleReflectionVector(mPaddle, mBall));
 
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::PADDLE_COLLISION).play();
@@ -524,29 +539,7 @@ void PlayState::TestCollision(Brick& mBrick, Ball& mBall)
 
     playerScore += POINTS_BALL;
 
-    // Calculate intersections of ball/brick
-    float overlapLeft{mBall.right() - mBrick.left()};
-    float overlapRight{mBrick.right() - mBall.left()};
-    float overlapTop{mBall.bottom() - mBrick.top()};
-    float overlapBottom{mBrick.bottom() - mBall.top()};
-
-    bool ballFromLeft(abs(overlapLeft) < abs(overlapRight));
-    bool ballFromTop(abs(overlapTop) < abs(overlapBottom));
-
-    float minOverlapX{ballFromLeft ? overlapLeft : overlapRight};
-    float minOverlapY{ballFromTop ? overlapTop : overlapBottom};
-
-    sf::Vector2f newBallVelocity;
-
-    if (abs(minOverlapX) < abs(minOverlapY)) {
-        newBallVelocity.x = -mBall.getVelocity().x;
-        newBallVelocity.y = (mBrick.y() < mBall.y()) ? abs(mBall.getVelocity().y) : -abs(mBall.getVelocity().y);
-    } else {
-        newBallVelocity.x = (mBall.x() < mBrick.x()) ? -mBall.getVelocity().x : mBall.getVelocity().x;
-        newBallVelocity.y = ballFromTop ? -abs(mBall.getVelocity().y) : abs(mBall.getVelocity().y);
-    }
-
-    mBall.setVelocity(newBallVelocity);
+    mBall.setVelocity(CalculateBrickReflectionVector(mBrick, mBall));
 
     if (mBrick.isDestroyed()) {
         if (!((std::rand() % 100) % POWERUP_PROBABILITY)) {
@@ -637,8 +630,8 @@ void PlayState::ApplyPowerup()
 
             break;
         case 6:
-            for (auto& brick : bricks) {
-                brick.setPos({brick.x(), brick.y() + brick.getHeight()});
+            for (auto& brick : brickGrid.GetBricks()) {
+                brick.setPos({brick.x(), brick.y() + brick.GetSize().y});
             }
             if (IsSoundEnabled()) {
                 sounds.at(SoundEffect::BRICKS_MOVE_DOWN).play();
