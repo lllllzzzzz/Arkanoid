@@ -550,8 +550,7 @@ void PlayState::TestCollision(Brick& mBrick, Ball& mBall)
 
     if (mBrick.isDestroyed()) {
         if (!((std::rand() % 100) % POWERUP_PROBABILITY)) {
-            powerups.emplace_back(m_engine,
-                sf::Vector2f{mBrick.x(), mBrick.y()}, m_engine->resourceMan.GetTexture("powerup_extra_life.png"));
+            powerups.emplace_back(m_engine, sf::Vector2f{mBrick.x(), mBrick.y()});
         }
     }
 
