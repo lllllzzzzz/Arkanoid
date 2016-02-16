@@ -14,6 +14,7 @@
 #include "..\objects\projectile.hpp"
 #include "..\objects\shield.hpp"
 //#include "..\levels\levels.hpp"
+#include "..\player\player.hpp"
 
 /*namespace Arkanoid
 {*/
@@ -40,17 +41,15 @@
         void LoadLevel(const int level);
         void GenerateNewBrickGrid(const int level);
 
-        bool IsGameRunning() const noexcept { return m_isGameRunning; }
-        void SetGameRunning(const bool state) noexcept { m_isGameRunning = state; }
+        inline bool IsGameRunning() const noexcept { return m_isGameRunning; }
+        inline void SetGameRunning(const bool state) noexcept { m_isGameRunning = state; }
+
+        inline void SetLevel(const int level) noexcept { playerLevel = level; }
+        inline int GetLevel() const noexcept { return playerLevel; }
 
         void ApplyPowerup();
         void RemovePowerups();
         void AddBonusPoints(const int level);
-
-        inline void SetPoints(const int numPoints) noexcept { playerScore = numPoints; }
-        inline void GainPoints(const int numPoints) noexcept { playerScore += numPoints; }
-        inline void SetLives(const int numLives) noexcept { playerLives = numLives; }
-        inline void GainLives(const int numLives) noexcept { playerLives += numLives; }
 
         inline bool IsBallLaunched() const noexcept { return m_isBallLaunched; }
         inline void SetBallLaunched(const bool state) noexcept { m_isBallLaunched = state; }
@@ -105,9 +104,10 @@
 
         GameEngine *m_engine;
 
-        Paddle paddle;
+        //Paddle paddle;
         Shield shield;
         Hud hud;
+        Player m_player;
         BrickGrid brickGrid;
 
         std::vector<Ball> balls;
@@ -151,6 +151,10 @@
         static const int POINTS_ALREADY_MAXED_LIVES;
         static const int POINTS_ALREADY_EXPANDED;
         static const int POINTS_SHIELD_ALREADY_ENABLED;
+        static const int POINTS_LASER_ALREADY_ENABLED;
+        static const int POINTS_PADDLE_ALREADY_SPED_UP;
+        static const int POINTS_BALLS_ALREADY_SLOWED_DOWN;
+        static const int START_LEVEL;
     };
 //}
 
