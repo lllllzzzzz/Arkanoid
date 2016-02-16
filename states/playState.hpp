@@ -14,8 +14,6 @@
 #include "..\objects\projectile.hpp"
 #include "..\objects\shield.hpp"
 //#include "..\levels\levels.hpp"
-//#include "..\objects\powerupExtraLife.hpp"
-//#include "pausedState.hpp"
 
 /*namespace Arkanoid
 {*/
@@ -49,11 +47,13 @@
         void RemovePowerups();
         void AddBonusPoints(const int level);
 
-        //int GainLives(const int numLives) { return playerLives += numLives; }
+        inline void SetPoints(const int numPoints) noexcept { playerScore = numPoints; }
+        inline void GainPoints(const int numPoints) noexcept { playerScore += numPoints; }
+        inline void SetLives(const int numLives) noexcept { playerLives = numLives; }
+        inline void GainLives(const int numLives) noexcept { playerLives += numLives; }
 
         inline bool IsBallLaunched() const noexcept { return m_isBallLaunched; }
-        inline void LaunchBall() noexcept { m_isBallLaunched = true; }
-        inline void DockBall() noexcept { m_isBallLaunched = false; }
+        inline void SetBallLaunched(const bool state) noexcept { m_isBallLaunched = state; }
 
         inline bool IsSoundEnabled() const noexcept { return m_isSoundEnabled; }
         inline void SetSoundEnabled(const bool state) noexcept { m_isSoundEnabled = state; }
@@ -102,49 +102,55 @@
         };
 
         static PlayState m_PlayState;
-        GameEngine *m_engine;
 
-        std::vector<sf::RectangleShape> background;
-        std::vector<sf::Sound> sounds;
-        sf::Music backgroundMusic;
+        GameEngine *m_engine;
 
         Paddle paddle;
         Shield shield;
         Hud hud;
-        std::vector<Ball> balls;
-        //std::vector<Brick> bricks;
-        std::vector<Powerup> powerups;
-        std::vector<Projectile> projectiles;
         BrickGrid brickGrid;
 
-        bool m_isPlayerPlaying;
-        bool m_isSoundEnabled;
-        bool m_isGameRunning;
-        bool m_isBallLaunched;
+        std::vector<Ball> balls;
+        std::vector<Powerup> powerups;
+        std::vector<Projectile> projectiles;
+
+        std::vector<sf::RectangleShape> background;
+        std::vector<sf::Sound> sounds;
+        sf::Music backgroundMusic;
 
         int playerLives;
         int playerLevel;
         int playerScore;
         int highScore;
 
+        bool m_isSoundEnabled;
+        bool m_isGameRunning;
+        bool m_isBallLaunched;
+
         /*float lastFt;
         float currentSlice;
         static const float ftStep;
         static const float ftSlice;*/
 
-        bool keyAlreadyPressed{false};
-
-        static const sf::Vector2f initBallPos;
-        static const float ballRadius;
-        static const sf::Color ballColour;
-
+        static const sf::Color BACKGROUND_CLEAR_COLOUR;
         static const sf::Vector2f BRICK_SIZE;
         static const int POINTS_BALL;
         static const int POINTS_PROJECTILE;
         static const int MAXIMUM_REFLECTION_ANGLE;
         static const int DEFAULT_PLAYER_LIVES;
         static const int POWERUP_PROBABILITY;
-        static const int TOTAL_NUMBER_OF_POWERUPS;        
+        static const int TOTAL_NUMBER_OF_LEVELS;
+        static const int TOTAL_NUMBER_OF_POWERUPS;
+        static const int TOTAL_NUMBER_OF_SOUNDS;
+        static const int BONUS_POINTS_SHIELD;
+        static const int BONUS_POINTS_LASER;
+        static const int BONUS_POINTS_EXPANDED;
+        static const int BONUS_POINTS_LIVES_MULTIPLIER;
+        static const int BONUS_POINTS_LEVEL_MULTIPLIER;
+        static const int MAX_LIVES;
+        static const int POINTS_ALREADY_MAXED_LIVES;
+        static const int POINTS_ALREADY_EXPANDED;
+        static const int POINTS_SHIELD_ALREADY_ENABLED;
     };
 //}
 
