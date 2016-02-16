@@ -13,13 +13,25 @@
 //const float PlayState::ftStep = 1.f;
 //const float PlayState::ftSlice = 1.f;
 
+const sf::Color PlayState::BACKGROUND_CLEAR_COLOUR = {0, 0, 0};
 const sf::Vector2f PlayState::BRICK_SIZE = {40, 20};
 const int PlayState::POINTS_BALL = 5;
 const int PlayState::POINTS_PROJECTILE = 3;
 const int PlayState::DEFAULT_PLAYER_LIVES = 2;
 const int PlayState::MAXIMUM_REFLECTION_ANGLE = ((3 * M_PI) / 12);
 const int PlayState::POWERUP_PROBABILITY = 25;
+const int PlayState::TOTAL_NUMBER_OF_LEVELS = 6;
 const int PlayState::TOTAL_NUMBER_OF_POWERUPS = 8;
+const int PlayState::TOTAL_NUMBER_OF_SOUNDS = 8;
+const int PlayState::BONUS_POINTS_SHIELD = 50;
+const int PlayState::BONUS_POINTS_LASER = 40;
+const int PlayState::BONUS_POINTS_EXPANDED = 25;
+const int PlayState::BONUS_POINTS_LIVES_MULTIPLIER = 12;
+const int PlayState::BONUS_POINTS_LEVEL_MULTIPLIER = 15;
+const int PlayState::MAX_LIVES = 5;
+const int PlayState::POINTS_ALREADY_MAXED_LIVES = 50;
+const int PlayState::POINTS_ALREADY_EXPANDED = 30;
+const int PlayState::POINTS_SHIELD_ALREADY_ENABLED = 25;
 
 PlayState PlayState::m_PlayState;
 
@@ -29,7 +41,6 @@ PlayState::PlayState() :
     highScore(0),
     playerLives(0),
     playerLevel(1),
-    m_isPlayerPlaying(true),
     m_isSoundEnabled(true),
     m_isGameRunning(true),
     m_isBallLaunched(false)
@@ -107,14 +118,6 @@ void PlayState::HandleEvents()
         } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::G) {
             brickGrid.Clear();
         } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::R) {
-            /*
-            for (auto& brick : bricks) {
-                brick.setPos({brick.x(), brick.y() + brick.GetSize().y});
-                if (IsSoundEnabled()) {
-                    sounds.at(SoundEffect::BRICKS_MOVE_DOWN).play();
-                }
-            }
-            */
             brickGrid.MoveDown();
         }
     }
@@ -124,25 +127,16 @@ void PlayState::HandleEvents()
 
     }
 
-    /*LaunchBall();
-
-    for (auto& ball : balls) {
-        if (ball.right() < paddle.left()) {
-            paddle.MoveLeft();
-        } else if (ball.left() > paddle.right()) {
-            paddle.MoveRight();
-        }
-    }*/
-
     // Handle player input
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
         m_engine->Quit();
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
+        shield.SetEnabled(true);
         //m_engine->pushState(/*PausedState::Instance()*/new PausedState());
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) {
         if (balls.size() == 1) {
             if (!IsBallLaunched()) {
-                LaunchBall();
+                SetBallLaunched(true);
                 balls.front().setVelocity({0, -balls.front().getSpeed()});
             }
         }
@@ -157,15 +151,6 @@ void PlayState::HandleEvents()
         LoadLevel(playerLevel + 1);
     }
 
-    if (!shield.IsEnabled()) {
-        // Destroy all missed balls
-        for (auto& ball : balls) {
-            if (ball.y() > /*shield.top()*/m_engine->getWindowSize().y) {
-                ball.destroy();
-            }
-        }
-    }
-
     if (balls.empty()/* && !bricks.empty()*/) {
         RemovePowerups();
         if (!playerLives--) {
@@ -173,7 +158,7 @@ void PlayState::HandleEvents()
         }
 
         balls.emplace_back(m_engine, sf::Vector2f{paddle.x(), paddle.y() - ((paddle.getSize().y / 2) + balls.front().getRadius())});
-        DockBall();
+        SetBallLaunched(false);
         //if (isPlayerPlaying()) {
             if (IsSoundEnabled()) {
                 sounds.at(SoundEffect::NEW_GAME).play();
@@ -181,16 +166,16 @@ void PlayState::HandleEvents()
         //}
     }
 
-    if (shield.IsEnabled()) {
-        for (auto& ball : balls) {
-            TestCollision(shield, ball);
-        }
-    }
-
-    // Perform collision detection between all balls and bricks
-    // O(N*M) algorithm
+    // Perform collision detection between all balls and paddle/shield/bricks
     for (auto& ball : balls) {
         TestCollision(paddle, ball);
+
+        if (shield.IsEnabled()) {
+            TestCollision(shield, ball);
+        } else if (ball.y() > m_engine->getWindowSize().y) {
+            ball.destroy();
+        }
+
         for (auto& brick : brickGrid.GetBricks()) {
             TestCollision(brick, ball);
         }
@@ -273,14 +258,10 @@ void PlayState::Update()
     //}
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::F)) {
-        LaunchBall();
+        SetBallLaunched(true);
         balls.emplace_back(m_engine, sf::Vector2f{paddle.x() - balls.back().getRadius() / 2, paddle.y() - 20});
         //balls.back().Init();
         balls.back().setVelocity({0, -32});
-    }
-
-    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::G)) {
-        //bricks.clear();
     }
 }
 
@@ -292,7 +273,7 @@ void PlayState::Draw()
         return;
     }
 
-    m_engine->getWindow().clear({0, 0, 0});
+    m_engine->getWindow().clear(BACKGROUND_CLEAR_COLOUR);
 
     // Draw background image
     m_engine->getWindow().draw(background.at(BackgroundObject::BACKGROUND));
@@ -303,8 +284,7 @@ void PlayState::Draw()
     // Draw bricks
     for (auto& brick : brickGrid.GetBricks()) {
         if (brick.isVisible()) {
-            m_engine->getWindow().draw(brick.shape);
-            m_engine->getWindow().draw(brick.shadow);
+            brick.Draw();
         }
     }
 
@@ -315,28 +295,30 @@ void PlayState::Draw()
     // Draw balls
     for (auto& ball : balls) {
         if (!ball.isDestroyed()) {
-            m_engine->getWindow().draw(ball.shadow);
-            m_engine->getWindow().draw(ball.shape);
+            ball.Draw();
         }
     }
 
     // Draw powerups
     for (auto& powerup : powerups) {
-        m_engine->getWindow().draw(powerup.shadow);
-        m_engine->getWindow().draw(powerup.shape);
+        if (!powerup.isDestroyed()) {
+            powerup.Draw();
+        }
     }
 
     // Draw projectiles
     for (auto& projectile : projectiles) {
-        m_engine->getWindow().draw(projectile.shape);
+        if (!projectile.isDestroyed()) {
+            projectile.Draw();
+        }
     }
 
     // Draw paddle
-    m_engine->getWindow().draw(paddle.shadow);
-    m_engine->getWindow().draw(paddle.shape);
+    paddle.Draw();
 
+    // Draw shield
     if (shield.IsEnabled()) {
-        m_engine->getWindow().draw(shield.shape);
+        shield.Draw();
     }
 
     // Draw background objects
@@ -370,7 +352,7 @@ void PlayState::NewGame()
     playerLevel = 1;
     highScore = std::max(playerScore, highScore);
     playerScore = 0;
-    playerLives = DEFAULT_PLAYER_LIVES;
+    SetLives(DEFAULT_PLAYER_LIVES);
 
     paddle.reset();
 
@@ -389,7 +371,7 @@ void PlayState::NewGame()
 
 void PlayState::RemovePowerups()
 {
-    shield.Disable();
+    shield.SetEnabled(false);
     paddle.DisableLaser();
     //paddle.Shrink();
 }
@@ -399,43 +381,39 @@ void PlayState::AddBonusPoints(const int level)
     int bonusPoints = 0;
 
     if (shield.IsEnabled()) {
-        bonusPoints += 50;
+        bonusPoints += BONUS_POINTS_SHIELD;
     }
 
     if (paddle.HasLaser()) {
-        bonusPoints += 40;
+        bonusPoints += BONUS_POINTS_LASER;
     }
 
     if (paddle.IsExpanded()) {
-        bonusPoints += 25;
+        bonusPoints += BONUS_POINTS_EXPANDED;
     }
 
-    bonusPoints += playerLives * 12;
-    bonusPoints += level * 15;
+    bonusPoints += playerLives * BONUS_POINTS_LIVES_MULTIPLIER;
+    bonusPoints += level * BONUS_POINTS_LEVEL_MULTIPLIER;
 
-    playerScore += bonusPoints;
+    GainPoints(bonusPoints);
 }
 
 void PlayState::LoadLevel(const int level)
 {
-    playerLevel = (level < 6) ? level : 1;
+    playerLevel = (level < TOTAL_NUMBER_OF_LEVELS) ? level : 1;
 
     paddle.reset();
-    //paddle.setPos({initPaddlePos.x, initPaddlePos.y});
-
     powerups.clear();
     projectiles.clear();
 
-    DockBall();
+    SetBallLaunched(false);
     balls.clear();
     balls.emplace_back(m_engine, sf::Vector2f{m_engine->getWindowSize().x / 2, m_engine->getWindowSize().y - paddle.getPos().y - paddle.getSize().y});
     balls.front().setPos({m_engine->getWindowSize().x, paddle.top() - (balls.front().getRadius() * 2) + 1});
 
-    if (/*isPlayerPlaying()*/ 1) {
-        if (IsSoundEnabled()) {
-            sounds.at(SoundEffect::NEW_GAME).play();
-            backgroundMusic.play();
-        }
+    if (IsSoundEnabled()) {
+        sounds.at(SoundEffect::NEW_GAME).play();
+        backgroundMusic.play();
     }
 
     brickGrid.GenerateGrid(level);
@@ -448,6 +426,7 @@ sf::Vector2f PlayState::CalculatePaddleReflectionVector(Paddle& mPaddle, Ball& m
     float normalisedRelativeIntersectX{(relativeIntersectX / (paddle.getSize().x / 2))};
     float bounceAngle{normalisedRelativeIntersectX * /*MAXIMUM_REFLECTION_ANGLE*/(3 * M_PI) / 12};
 
+    // Calculate vector of ball reflecting/bouncing off of paddle
     sf::Vector2f newBallVelocity;
     newBallVelocity.x = mBall.getSpeed() * sin(bounceAngle);
     newBallVelocity.y = -mBall.getSpeed() * cos(bounceAngle);
@@ -472,6 +451,7 @@ sf::Vector2f PlayState::CalculateBrickReflectionVector(Brick& mBrick, Ball& mBal
 
     sf::Vector2f newBallVelocity;
 
+    // Calculate vector of ball reflecting/bouncing off of brick
     if (abs(minOverlapX) < abs(minOverlapY)) {
         newBallVelocity.x = -mBall.getVelocity().x;
         newBallVelocity.y = (mBrick.y() < mBall.y()) ? abs(mBall.getVelocity().y) : -abs(mBall.getVelocity().y);
@@ -500,7 +480,6 @@ void PlayState::TestCollision(Paddle& mPaddle, Ball& mBall)
         return;
     }
 
-    // Set ball velocity to reflection vector
     mBall.setVelocity(CalculatePaddleReflectionVector(mPaddle, mBall));
 
     if (IsSoundEnabled()) {
@@ -518,7 +497,7 @@ void PlayState::TestCollision(Shield& mShield, Ball& mBall)
 
     mBall.setVelocity({mBall.getVelocity().x, -mBall.getVelocity().y});
 
-    mShield.Disable();
+    mShield.SetEnabled(false);
 
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::SHIELD_BOUNCE).play();
@@ -537,7 +516,7 @@ void PlayState::TestCollision(Brick& mBrick, Ball& mBall)
         mBrick.destroy();
     }
 
-    playerScore += POINTS_BALL;
+    GainPoints(POINTS_BALL);
 
     mBall.setVelocity(CalculateBrickReflectionVector(mBrick, mBall));
 
@@ -563,7 +542,7 @@ void PlayState::TestCollision(Brick& mBrick, Projectile& mProjectile)
     mBrick.destroy();
     mProjectile.destroy();
 
-    playerScore += 3;
+    GainPoints(POINTS_PROJECTILE);
 
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::BRICK_COLLISION).play();
@@ -592,51 +571,56 @@ void PlayState::ApplyPowerup()
     int n = std::rand() % TOTAL_NUMBER_OF_POWERUPS;
 
     switch (n) {
+        // Player gains a life
         case 0:
-            if (playerLives < 4) {
-                playerLives++;
+            if (playerLives < MAX_LIVES) {
+                GainLives(1);
             } else {
-                playerScore += 30;
+                GainPoints(POINTS_ALREADY_MAXED_LIVES);
             }
 
             break;
+        // Paddle expands
         case 1:
             if (!paddle.IsExpanded()) {
                 paddle.Expand();
             } else {
-                playerScore += 30;
+                GainPoints(POINTS_ALREADY_EXPANDED);
             }
 
             break;
+        // Balls slow down
         case 2:
             for (auto& ball : balls) {
-                ball.setSpeed(ball.getSpeed() - 2);
+                ball.SlowDown();
             }
             break;
+        // Player gets a new ball
         case 3:
             balls.emplace_back(m_engine, sf::Vector2f{paddle.x() - balls.back().radius() / 2, paddle.y() - 20});
             balls.back().setVelocity({0, -balls.back().getSpeed()});
             break;
+        // Player speeds up
         case 4:
-            //paddle.setVelocity(paddle.getSpeed() + 2);
             paddle.SpeedUp();
             break;
+        // Shield is enabled
         case 5:
             if (!shield.IsEnabled()) {
-                shield.Enable();
+                shield.SetEnabled(true);
             } else {
-                playerScore += 30;
+                GainPoints(POINTS_SHIELD_ALREADY_ENABLED);
             }
-
             break;
+        // Brick grid moves down
         case 6:
-            for (auto& brick : brickGrid.GetBricks()) {
-                brick.setPos({brick.x(), brick.y() + brick.GetSize().y});
-            }
+            brickGrid.MoveDown();
+
             if (IsSoundEnabled()) {
                 sounds.at(SoundEffect::BRICKS_MOVE_DOWN).play();
             }
             break;
+        // Player gets laser
         case 7:
             paddle.EnableLaser();
             break;
@@ -648,7 +632,7 @@ void PlayState::ApplyPowerup()
 void PlayState::LoadResources()
 {
     // Set up sounds vector
-    for (int i{0}; i < 8; i++) {
+    for (int i{0}; i < TOTAL_NUMBER_OF_SOUNDS; i++) {
         sounds.emplace_back(sf::Sound());
     }
 
@@ -670,6 +654,7 @@ void PlayState::LoadResources()
     // Set up background vector
     for (int i{0}; i < 10; i++) {
         background.emplace_back(sf::RectangleShape());
+        background.back().setOrigin(0, 0);
     }
 
     //std::cout << "Resources loaded" << std::endl;
@@ -685,20 +670,21 @@ void PlayState::LoadObjects()
     const int WINDOW_X = m_engine->getWindowSize().x;
     const int WINDOW_Y = m_engine->getWindowSize().y;
 
+    static const sf::Vector2f BORDER_CORNER_LEFT_SIZE = {20, 20};
+    static const sf::Vector2f BORDER_CORNER_RIGHT_SIZE = {20, 20};
+
     // Set up left border corner shape
     background.at(BackgroundObject::BORDER_CORNER_LEFT).setPosition(0, HUD_Y);
-    background.at(BackgroundObject::BORDER_CORNER_LEFT).setSize({20, 20});
+    background.at(BackgroundObject::BORDER_CORNER_LEFT).setSize(BORDER_CORNER_LEFT_SIZE);
     background.at(BackgroundObject::BORDER_CORNER_LEFT).setTexture(&m_engine->resourceMan.GetTexture("border_corner_left.png"));
-    background.at(BackgroundObject::BORDER_CORNER_LEFT).setOrigin(0, 0);
 
     const int CORNER_LEFT_X = background.at(BackgroundObject::BORDER_CORNER_LEFT).getSize().x;
     const int CORNER_LEFT_Y = background.at(BackgroundObject::BORDER_CORNER_LEFT).getSize().y;
 
     // Set up right border corner shape
     background.at(BackgroundObject::BORDER_CORNER_RIGHT).setPosition(WINDOW_X - CORNER_LEFT_X, 30);
-    background.at(BackgroundObject::BORDER_CORNER_RIGHT).setSize({20, 20});
+    background.at(BackgroundObject::BORDER_CORNER_RIGHT).setSize(BORDER_CORNER_RIGHT_SIZE);
     background.at(BackgroundObject::BORDER_CORNER_RIGHT).setTexture(&m_engine->resourceMan.GetTexture("border_corner_right.png"));
-    background.at(BackgroundObject::BORDER_CORNER_RIGHT).setOrigin(0, 0);
 
     const int CORNER_RIGHT_X = background.at(BackgroundObject::BORDER_CORNER_RIGHT).getSize().x;
     const int CORNER_RIGHT_Y = background.at(BackgroundObject::BORDER_CORNER_RIGHT).getSize().y;
@@ -707,7 +693,6 @@ void PlayState::LoadObjects()
     background.at(BackgroundObject::BORDER_TOP).setPosition(CORNER_LEFT_X, HUD_Y);
     background.at(BackgroundObject::BORDER_TOP).setSize({WINDOW_X - CORNER_LEFT_X - CORNER_RIGHT_X, 20});
     background.at(BackgroundObject::BORDER_TOP).setTexture(&m_engine->resourceMan.GetTexture("border_top.png"));
-    background.at(BackgroundObject::BORDER_TOP).setOrigin(0, 0);
 
     const int BORDER_TOP_Y = background.at(BackgroundObject::BORDER_TOP).getSize().y;
 
@@ -715,43 +700,36 @@ void PlayState::LoadObjects()
     background.at(BackgroundObject::BORDER_LEFT).setPosition(0, HUD_Y + CORNER_LEFT_Y);
     background.at(BackgroundObject::BORDER_LEFT).setSize({20, WINDOW_Y - HUD_Y - CORNER_LEFT_Y});
     background.at(BackgroundObject::BORDER_LEFT).setTexture(&m_engine->resourceMan.GetTexture("border_side.png"));
-    background.at(BackgroundObject::BORDER_LEFT).setOrigin(0, 0);
 
     // Set up right border shape
     background.at(BackgroundObject::BORDER_RIGHT).setPosition(WINDOW_X - CORNER_LEFT_X, HUD_Y + CORNER_RIGHT_Y);
     background.at(BackgroundObject::BORDER_RIGHT).setSize({20, WINDOW_Y - HUD_Y - CORNER_RIGHT_Y});
     background.at(BackgroundObject::BORDER_RIGHT).setTexture(&m_engine->resourceMan.GetTexture("border_side.png"));
-    background.at(BackgroundObject::BORDER_RIGHT).setOrigin(0, 0);
 
     // Set up left shield shape
     background.at(BackgroundObject::SHIELD_LEFT).setPosition(0, WINDOW_Y - 50);
     background.at(BackgroundObject::SHIELD_LEFT).setSize({25, 20});
     background.at(BackgroundObject::SHIELD_LEFT).setTexture(&m_engine->resourceMan.GetTexture("shield_left.png"));
-    background.at(BackgroundObject::SHIELD_LEFT).setOrigin(0, 0);
 
     // Set up right shield shape
     background.at(BackgroundObject::SHIELD_RIGHT).setPosition(WINDOW_X - 25, WINDOW_Y - 50);
     background.at(BackgroundObject::SHIELD_RIGHT).setSize({25, 20});
     background.at(BackgroundObject::SHIELD_RIGHT).setTexture(&m_engine->resourceMan.GetTexture("shield_right.png"));
-    background.at(BackgroundObject::SHIELD_RIGHT).setOrigin(0, 0);
 
     // Set up top shadow shape
     background.at(BackgroundObject::SHADOW_TOP).setPosition(CORNER_LEFT_X, HUD_Y + BORDER_TOP_Y);
     background.at(BackgroundObject::SHADOW_TOP).setSize({WINDOW_X - CORNER_LEFT_X - CORNER_RIGHT_X, 20});
     background.at(BackgroundObject::SHADOW_TOP).setFillColor({0, 0, 0, 127});
-    background.at(BackgroundObject::SHADOW_TOP).setOrigin(0, 0);
 
     // Set up left shadow shape
     background.at(BackgroundObject::SHADOW_LEFT).setPosition(20, HUD_Y + BORDER_TOP_Y + 20);
     background.at(BackgroundObject::SHADOW_LEFT).setSize({20, WINDOW_Y - HUD_Y - BORDER_TOP_Y});
     background.at(BackgroundObject::SHADOW_LEFT).setFillColor({0, 0, 0, 127});
-    background.at(BackgroundObject::SHADOW_LEFT).setOrigin(0, 0);
 
     // Set up background shape
     background.at(BackgroundObject::BACKGROUND).setPosition(0, 0);
     background.at(BackgroundObject::BACKGROUND).setSize({WINDOW_X, WINDOW_Y});
     background.at(BackgroundObject::BACKGROUND).setTexture(&m_engine->resourceMan.GetTexture("hexagon_pattern.png"));
-    background.at(BackgroundObject::BACKGROUND).setOrigin(0, 0);
 
     //std::cout << "PlayState objects loaded" << std::endl;
 }
