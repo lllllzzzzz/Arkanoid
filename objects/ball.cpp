@@ -1,27 +1,33 @@
 #include "ball.hpp"
 
-const int Ball::m_ballVelocityDefault = 10;
-const int Ball::m_radiusDefault = 7;
-const sf::Color Ball::m_colourDefault = sf::Color(0, 0, 0);
-const int Ball::m_shadowOpacity = 127;
+const sf::Color Ball::DEFAULT_COLOUR = sf::Color(0, 0, 0);
+const int Ball::DEFAULT_SPEED = 10;
+const int Ball::DEFAULT_RADIUS = 7;
+const int Ball::SHADOW_OPACITY = 127;
+const int Ball::SLOW_DOWN_FACTOR = -2;
+const int Ball::SPEED_UP_FACTOR = 2;
 
-Ball::Ball(GameEngine *game, const float x, const float y) :
-    velocity(0, m_ballVelocityDefault),
-    m_ballVelocity(m_ballVelocityDefault),
-    m_radius(m_radiusDefault),
+Ball::Ball(GameEngine *game, const sf::Vector2f position) :
+    m_velocity(0, DEFAULT_SPEED),
+    m_speed(DEFAULT_SPEED),
+    m_radius(DEFAULT_RADIUS),
     m_isDestroyed(false)
 {
-    shape.setPosition(x, y);
+    m_engine = game;
+
+    shape.setPosition(position);
     shape.setRadius(m_radius);
     shape.setOrigin(radius() / 2, radius() / 2);
-    shape.setTexture(&game->resourceMan.GetTexture("ball.png"));
+    shape.setTexture(&m_engine->resourceMan.GetTexture("ball.png"));
 
-    shadow.setPosition(x + (radius() / 2), y + radius() / 2);
+    shadow.setPosition(position.x + (radius() / 2), position.y + radius() / 2);
     shadow.setRadius(radius());
-    shadow.setFillColor({0, 0, 0, m_shadowOpacity});
+    shadow.setFillColor({0, 0, 0, SHADOW_OPACITY});
     shadow.setOrigin(0, 0);
 
-    hitBordersSound.setBuffer(game->resourceMan.GetSound("ball_hit_borders.wav"));
+    m_hitBordersSound.setBuffer(m_engine->resourceMan.GetSound("ball_hit_borders.wav"));
+
+    m_velocity = {0, -DEFAULT_SPEED};
 }
 
 Ball::~Ball()
@@ -31,7 +37,13 @@ Ball::~Ball()
 
 void Ball::Init(GameEngine *game)
 {
-    //shape.setTexture(game->resourceMan.GetTexture("ball.png"));
+    //shape.setTexture(m_engine->resourceMan.GetTexture("ball.png"));
+}
+
+void Ball::Draw()
+{
+    m_engine->getWindow().draw(shadow);
+    m_engine->getWindow().draw(shape);
 }
 
 void Ball::setPos(const sf::Vector2f newPosition) noexcept
@@ -42,7 +54,7 @@ void Ball::setPos(const sf::Vector2f newPosition) noexcept
 
 void Ball::setVelocity(const sf::Vector2f newVelocity) noexcept
 {
-    velocity = newVelocity;
+    m_velocity = newVelocity;
 }
 
 int Ball::getRadius() const noexcept
@@ -50,26 +62,35 @@ int Ball::getRadius() const noexcept
     return m_radius;
 }
 
-void Ball::update(/*const float mFT, */const sf::Vector2f windowSize)
+void Ball::update(/*const float mFT, */)
 {
-    // Move ball at velocity and angle specified by vector
-    shape.move(velocity/* * mFT*/);
-    shadow.move(velocity/* * mFT*/);
+    shape.move(m_velocity/* * mFT*/);
+    shadow.move(m_velocity/* * mFT*/);
 
     // Rebound ball off of sides of window
     if (left() <= 20) {
-        velocity.x = -velocity.x;
-        hitBordersSound.play();
-    } else if (right() >= windowSize.x - 20 - 10) {
-        velocity.x = -velocity.x;
-        hitBordersSound.play();
+        m_velocity.x = -m_velocity.x;
+        m_hitBordersSound.play();
+    } else if (right() >= m_engine->getWindowSize().x - 20 - 10) {
+        m_velocity.x = -m_velocity.x;
+        m_hitBordersSound.play();
     }
 
     // Rebound ball off of top of window
     if (top() < (30 + 20)) {
-        velocity.y = m_ballVelocity;
-        hitBordersSound.play();
+        m_velocity.y = m_speed;
+        m_hitBordersSound.play();
     }
+}
+
+void Ball::SlowDown() noexcept
+{
+    m_speed += SLOW_DOWN_FACTOR;
+}
+
+void Ball::SpeedUp() noexcept
+{
+    m_speed += SPEED_UP_FACTOR;
 }
 
 bool Ball::isDestroyed() const noexcept
