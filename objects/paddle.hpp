@@ -4,20 +4,64 @@
 #include <SFML\Window.hpp>
 #include <SFML\Graphics.hpp>
 
+#include "..\stateman\gameEngine.hpp"
 #include "rectangle.hpp"
 
 class Paddle : public Rectangle
 {
 public:
-    Paddle(float posX, float posY, int width, int height, sf::Color color);
+    Paddle(const sf::Vector2f position = {480 / 2, 620 - 40}, const sf::Vector2f size = {80, 15}, sf::Color color = sf::Color(48, 48, 48));
     ~Paddle();
 
-    void update();
-    void setPos(const int posX, const int posY);
+    void Init(GameEngine *game);
+
+    void Draw();
+
+    void Reset();
+
+    void update(/*const float mFT, */ const sf::Vector2f windowSize);
+    void setPos(const sf::Vector2f position) noexcept;
+    sf::Vector2f getPos() const noexcept { return {x(), y()}; }
+    void setSize(const sf::Vector2f size);
+    sf::Vector2f getSize() const noexcept { return m_size; }
+    void setSpeed(const int speed) noexcept;
+    int getSpeed() const noexcept;
+
+    bool HasLaser() const noexcept { return m_hasLaser; }
+    void SetLaserEnabled(const bool state) noexcept { m_hasLaser = state; }
+
+    bool IsExpanded() const noexcept { return getSize().x > DEFAULT_SIZE.x; }
+    bool IsShrunk() const noexcept { return getSize().x < DEFAULT_SIZE.x; }
+
+    void SpeedUp() noexcept;
+    void SlowDown() noexcept;
+    bool IsSpedUp() const noexcept { return m_speed < DEFAULT_SPEED; }
+    bool IsSlowedDown() const noexcept { return m_speed > DEFAULT_SPEED; }
+
+    void Expand() noexcept;
+    void Shrink() noexcept;
+
+    sf::RectangleShape shadow;
 
 private:
+    GameEngine *m_engine;
+
     sf::Vector2f velocity;
-    const int paddleVelocity{10.0f};
+
+    sf::Vector2f m_size;
+    int m_speed;
+    int m_newWidth;
+
+    bool m_hasLaser;
+
+    static const float DEFAULT_SPEED;
+    static const sf::Vector2f DEFAULT_SIZE;
+    static const int ELEVATION;
+    static const int SHADOW_OPACITY;
+    static const int SPEED_UP_FACTOR;
+    static const int SLOW_DOWN_FACTOR;
+    static const int EXPAND_FACTOR;
+    static const int SHRINK_FACTOR;
 };
 
 #endif // PADDLE_HPP
