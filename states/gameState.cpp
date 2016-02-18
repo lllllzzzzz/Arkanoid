@@ -1,11 +1,23 @@
 #include "gameState.hpp"
 
+//using namespace Arkanoid;
+
 GameState::GameState()
 {
 
 }
 
 GameState::~GameState()
+{
+
+}
+
+void GameState::Init(GameEngine *game)
+{
+
+}
+
+void GameState::Cleanup()
 {
 
 }
@@ -20,17 +32,27 @@ void GameState::Resume()
 
 }
 
-void GameState::HandleEvents(GameEngine *game)
+void GameState::HandleEvents()
 {
 
 }
 
-void GameState::Update(GameEngine *game)
+void GameState::Update()
 {
 
 }
 
-void GameState::Draw(GameEngine *game)
+void GameState::Draw()
+{
+
+}
+
+void GameState::LoadResources()
+{
+
+}
+
+void GameState::LoadObjects()
 {
 
 }
