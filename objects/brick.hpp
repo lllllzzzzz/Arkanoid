@@ -17,34 +17,35 @@ public:
 
     void setPos(const sf::Vector2f newPosition);
 
+    void Draw();
+
     const bool isVisible() const noexcept;
     void setVisibility(const bool isVisible) noexcept;
 
     int GetType() const noexcept { return m_type; }
 
-    int getWidth() const noexcept { return m_width; }
-    int getHeight() const noexcept { return m_height; }
+    sf::Vector2f GetSize() const noexcept { return m_size; }
 
     bool isDestroyed() const noexcept;
     void destroy() noexcept;
-    
+
     //Sprite sprite;
 
     sf::RectangleShape shadow;
 
 private:
+    GameEngine *m_engine;
+
     sf::Vector2f velocity;
 
-    int m_width;
-    int m_height;
+    sf::Vector2f m_size;
     int m_type;
 
     bool m_isDestroyed;
     bool m_isVisible;
 
-    static const int width;
-    static const int height;
-    static const int shadowOpacity;
+    static const sf::Vector2f SIZE;
+    static const int SHADOW_OPACITY;
 };
 
 #endif // BRICK_HPP
