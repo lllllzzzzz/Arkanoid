@@ -7,13 +7,10 @@
 #include "gameState.hpp"
 #include "..\hud\hud.hpp"
 #include "..\objects\ball.hpp"
-#include "..\objects\paddle.hpp"
-#include "..\objects\brick.hpp"
 #include "..\objects\brickGrid.hpp"
 #include "..\objects\powerup.hpp"
 #include "..\objects\projectile.hpp"
 #include "..\objects\shield.hpp"
-//#include "..\levels\levels.hpp"
 #include "..\player\player.hpp"
 
 /*namespace Arkanoid
@@ -43,19 +40,16 @@
 
         inline bool IsGameRunning() const noexcept { return m_isGameRunning; }
         inline void SetGameRunning(const bool state) noexcept { m_isGameRunning = state; }
-
         inline void SetLevel(const int level) noexcept { playerLevel = level; }
         inline int GetLevel() const noexcept { return playerLevel; }
+        inline bool IsBallLaunched() const noexcept { return m_isBallLaunched; }
+        inline void SetBallLaunched(const bool state) noexcept { m_isBallLaunched = state; }
+        inline bool IsSoundEnabled() const noexcept { return m_isSoundEnabled; }
+        inline void SetSoundEnabled(const bool state) noexcept { m_isSoundEnabled = state; }
 
         void ApplyPowerup();
         void RemovePowerups();
         void AddBonusPoints(const int level);
-
-        inline bool IsBallLaunched() const noexcept { return m_isBallLaunched; }
-        inline void SetBallLaunched(const bool state) noexcept { m_isBallLaunched = state; }
-
-        inline bool IsSoundEnabled() const noexcept { return m_isSoundEnabled; }
-        inline void SetSoundEnabled(const bool state) noexcept { m_isSoundEnabled = state; }
 
         template <class T1, class T2>
         bool IsIntersecting(T1& mA, T2& mB);
@@ -104,7 +98,6 @@
 
         GameEngine *m_engine;
 
-        //Paddle paddle;
         Shield shield;
         Hud hud;
         Player m_player;
