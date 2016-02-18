@@ -15,15 +15,17 @@ public:
 
     void Init(GameEngine *game);
 
-    void displayHud(GameEngine *game, int playerScore, int highScore, int numLives, int level, bool playerIsPlaying);
-    void displayPlayerScore(GameEngine *game, int playerScore);
-    void displayHighScore(GameEngine *game, int highScore);
-    void displayLevel(GameEngine *game, int level);
-    void displayNumLives(GameEngine *game, int numLives);
+    void displayHud(const int playerScore, const int highScore, const int numLives, const int level);
+    void displayPlayerScore(const int playerScore);
+    void displayHighScore(const int highScore);
+    void displayLevel(const int level);
+    void displayNumLives(const int numLives);
 
     int getScoreBackgroundHeight() const noexcept { return scoreBackgroundHeight; }
 
 private:
+    GameEngine *m_engine;
+
     sf::Text text;
     sf::Font font;
     sf::RectangleShape lives;
