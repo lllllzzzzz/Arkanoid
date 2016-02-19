@@ -15,7 +15,7 @@ class GameState;
     class GameEngine
     {
     public:
-        GameEngine(const int width, const int height, const int fps, const std::string& windowTitle);
+        GameEngine(const sf::Vector2f windowSize, const int fps, const std::string& windowTitle);
         ~GameEngine();
 
         void pushState(GameState* state);
@@ -31,27 +31,29 @@ class GameState;
         void Draw();
 
         bool isRunning() const noexcept;
-        void Quit();
+        void Quit() noexcept;
 
         bool isWindowMoving() const noexcept;
-        void moveWindow(const bool moveWindow);
+        void moveWindow(const bool moveWindow) noexcept;
 
         sf::RenderWindow& getWindow();
-        int getWindowWidth() const noexcept;
-        int getWindowHeight() const noexcept;
-        void setWindowSize(const int width, const int height);
+        sf::Vector2f getWindowSize() const noexcept;
+        void setWindowSize(const sf::Vector2f newWindowSize) noexcept;
+        //static GameEngine* Instance() {
+        //    return &m_GameEngine;
+        //}
 
         ResourceManager resourceMan;
 
     private:
+        //static GameEngine m_GameEngine;
         sf::RenderWindow m_window;
 
         std::stack<GameState*> states;
 
-        bool m_isRunning;
+        sf::Vector2f m_windowSize;
         bool m_isWindowMoving;
-        int m_windowWidth;
-        int m_windowHeight;
+        bool m_isRunning;
     };
 //}
 
