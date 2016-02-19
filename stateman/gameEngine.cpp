@@ -5,11 +5,13 @@
 
 //using namespace Arkanoid;
 
-GameEngine::GameEngine(const int width, const int height, const int fps, const std::string& windowTitle) :
-    m_window({width, height}, windowTitle, sf::Style::Titlebar | sf::Style::Close),
-    m_windowWidth(width),
-    m_windowHeight(height),
-    m_isWindowMoving(false)
+//GameEngine GameEngine::m_GameEngine;
+
+GameEngine::GameEngine(const sf::Vector2f windowSize, const int fps, const std::string& windowTitle) :
+    m_window{{windowSize.x, windowSize.y}, windowTitle, sf::Style::Titlebar | sf::Style::Close},
+    m_windowSize{windowSize},
+    m_isWindowMoving{false},
+    m_isRunning{true}
 {
     m_window.setFramerateLimit(fps);
 }
@@ -58,7 +60,7 @@ GameState* GameEngine::peekState()
 
 void GameEngine::Run()
 {
-    HandleWindowEvents();
+    //HandleWindowEvents();
     HandleEvents();
     Update();
     Draw();
@@ -70,12 +72,12 @@ void GameEngine::HandleWindowEvents()
     sf::Event event;
     while (getWindow().pollEvent(event)) {
         if (isWindowMoving()) {
-            std::cout << "left mouse button clicked\n";
-            getWindow().setPosition({sf::Mouse::getPosition().x - getWindowWidth() / 2, sf::Mouse::getPosition().y - getWindowHeight() / 2});
+            getWindow().setPosition({sf::Mouse::getPosition().x - getWindowSize().x / 2, sf::Mouse::getPosition().y - getWindowSize().y / 2});
         } if (event.type == sf::Event::MouseButtonPressed/* && event.MouseButton.Button == sf::Mouse::Left*/) {
             moveWindow(true);
-        } if (event.type == sf::Event::MouseButtonReleased/* && event.MouseButton.Button == sf::Mouse::Left*/) {
+        } else if (event.type == sf::Event::MouseButtonReleased/* && event.MouseButton.Button == sf::Mouse::Left*/) {
             moveWindow(false);
+        } else if (event.type == sf::Event::Closed) {
             Quit();
         }
     }
@@ -83,17 +85,17 @@ void GameEngine::HandleWindowEvents()
 
 void GameEngine::HandleEvents()
 {
-    states.top()->HandleEvents(this);
+    states.top()->HandleEvents(/*this*/);
 }
 
 void GameEngine::Update()
 {
-    states.top()->Update(this);
+    states.top()->Update(/*this*/);
 }
 
 void GameEngine::Draw()
 {
-    states.top()->Draw(this);
+    states.top()->Draw(/*this*/);
 }
 
 bool GameEngine::isRunning() const noexcept
@@ -101,7 +103,7 @@ bool GameEngine::isRunning() const noexcept
     return m_isRunning;
 }
 
-void GameEngine::Quit()
+void GameEngine::Quit() noexcept
 {
     m_isRunning = false;
 }
@@ -111,7 +113,7 @@ bool GameEngine::isWindowMoving() const noexcept
     return m_isWindowMoving;
 }
 
-void GameEngine::moveWindow(const bool moveWindow)
+void GameEngine::moveWindow(const bool moveWindow) noexcept
 {
     m_isWindowMoving = moveWindow;
 }
@@ -121,18 +123,12 @@ sf::RenderWindow& GameEngine::getWindow()
     return m_window;
 }
 
-int GameEngine::getWindowWidth() const noexcept
+sf::Vector2f GameEngine::getWindowSize() const noexcept
 {
-    return m_windowWidth;
+    return m_windowSize;
 }
 
-int GameEngine::getWindowHeight() const noexcept
+void GameEngine::setWindowSize(const sf::Vector2f newWindowSize) noexcept
 {
-    return m_windowHeight;
-}
-
-void GameEngine::setWindowSize(const int width, const int height)
-{
-    m_windowWidth = width;
-    m_windowWidth = height;
+    m_windowSize = newWindowSize;
 }
