@@ -1,28 +1,24 @@
-#include <cassert>
-#include <SFML\Window.hpp>
-#include <SFML\Graphics.hpp>
-
 #include "stateman\gameEngine.hpp"
 #include "states\playState.hpp"
-#include "states\menuState.hpp"
 
-constexpr int windowWidth{770};
-constexpr int windowHeight{500};
-constexpr int framesRate{60};
-constexpr int numLives{2};
+const std::string WINDOW_TITLE = "Arkanoid";
+constexpr int WINDOW_WIDTH{480};
+constexpr int WINDOW_HEIGHT{620};
+constexpr int FRAMES_PER_SECOND{60};
+
+//using namespace Arkanoid;
 
 int main()
 {
-    GameEngine game{windowWidth, windowHeight, framesRate, false};
+    /*Arkanoid::*/GameEngine game{{WINDOW_WIDTH, WINDOW_HEIGHT}, FRAMES_PER_SECOND, WINDOW_TITLE};
 
     // Enter Play Game state at startup
-    game.changeState(PlayState::Instance());
+    game.changeState(/*Arkanoid::*/PlayState::Instance());
+    //game.changeState(/*Arkanoid::*/new PlayState());
 
     // Game engine loop
     while (game.isRunning()) {
-        game.HandleEvents();
-        game.Update();
-        game.Draw();
+        game.Run();
     }
 
     return 0;
