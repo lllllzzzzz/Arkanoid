@@ -409,6 +409,10 @@ void PlayState::AddBonusPoints(const int level)
 
 void PlayState::LoadLevel(const int level)
 {
+    if (level < 1) {
+        return;
+    }
+
     SetLevel((level < TOTAL_NUMBER_OF_LEVELS) ? level : 1);
 
     m_player.GetPaddle().Reset();
@@ -440,6 +444,8 @@ sf::Vector2f PlayState::CalculatePaddleReflectionVector(Paddle& mPaddle, Ball& m
     newBallVelocity.x = mBall.getSpeed() * sin(bounceAngle);
     newBallVelocity.y = -mBall.getSpeed() * cos(bounceAngle);
     newBallVelocity.x = (mBall.x() < mPaddle.x()) ? -newBallVelocity.x : newBallVelocity.x;
+
+    std::cout << "sin: " << sin(bounceAngle) << ", cos: " << cos(bounceAngle) << std::endl;
 
     return newBallVelocity;
 }
@@ -578,7 +584,7 @@ void PlayState::TestCollision(Paddle& mPaddle, Powerup& mPowerup)
 
 void PlayState::ApplyPowerup()
 {
-    const int RANDOM_POWERUP_NUMBER = std::rand() % TOTAL_NUMBER_OF_POWERUPS;
+    const int RANDOM_POWERUP_NUMBER /*= std::rand() % TOTAL_NUMBER_OF_POWERUPS*/=3;
 
     switch (RANDOM_POWERUP_NUMBER) {
         // Player gains a life
@@ -612,8 +618,7 @@ void PlayState::ApplyPowerup()
 
         // Player gets a new ball
         case 3:
-            balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x() - balls.back().radius() / 2, m_player.GetPaddle().y() - 20});
-            balls.back().setVelocity({0, -balls.back().getSpeed()});
+            balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x() - balls.back().radius() / 2, m_player.GetPaddle().y() -20});
             break;
 
         // Player speeds up
