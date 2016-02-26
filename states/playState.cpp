@@ -97,9 +97,6 @@ void PlayState::Resume()
 
 void PlayState::HandleEvents()
 {
-    //std::cout << "PlayState HandleEvents()" << std::endl;
-    //backgroundMusic.play();
-
     //timePoint1 = std::chrono::high_resolution_clock::now();
 
     sf::Event event;
@@ -275,8 +272,6 @@ void PlayState::Update()
 
 void PlayState::Draw()
 {
-    //std::cout << "PlayState Draw()" << std::endl;
-
     if (!IsGameRunning()) {
         return;
     }
@@ -355,8 +350,6 @@ void PlayState::Draw()
 
 void PlayState::NewGame()
 {
-    //std::cout << "PlayState newGame()" << std::endl;
-
     SetLevel(START_LEVEL);
 
     highScore = std::max(m_player.GetPoints(), highScore);
@@ -481,8 +474,6 @@ sf::Vector2f PlayState::CalculateBrickReflectionVector(Brick& mBrick, Ball& mBal
 template <class T1, class T2>
 bool PlayState::IsIntersecting(T1& mA, T2& mB)
 {
-    //std::cout << "PlayState IsIntersecting()" << std::endl;
-
     return mA.right() >= mB.left() && mA.left() <= mB.right()
         && mA.bottom() >= mB.top() && mA.top() <= mB.bottom();
 }
