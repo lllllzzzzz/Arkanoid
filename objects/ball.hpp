@@ -32,8 +32,7 @@ public:
     void SpeedUp() noexcept;
     bool IsSpedUp() const noexcept { return m_speed < DEFAULT_SPEED; }
     bool IsSlowedDown() const noexcept { return m_speed > DEFAULT_SPEED; }
-
-
+    
     void destroy() noexcept;
 
     sf::CircleShape shadow;
