@@ -36,17 +36,17 @@ void Hud::displayHud(const int playerScore, const int highScore, const int numLi
 {
     m_engine->getWindow().draw(scoreBackground);
 
-    if (/*playerIsPlaying*/1) {
+    //if (playerIsPlaying) {
         displayPlayerScore(playerScore);
         displayHighScore(std::max(playerScore, highScore));
         displayLevel(level);
         displayNumLives(numLives);
-    } else {
+    /*} else {
         text.setColor(sf::Color::White);
         text.setString("Press W to play");
         text.setPosition(15, 8);
         m_engine->getWindow().draw(text);
-    }
+    }*/
 }
 
 void Hud::displayPlayerScore(const int playerScore)
