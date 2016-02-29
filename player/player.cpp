@@ -17,7 +17,6 @@ Player::~Player()
 void Player::Init(GameEngine *game)
 {
     m_engine = game;
-
     m_paddle.Init(m_engine);
 }
 
