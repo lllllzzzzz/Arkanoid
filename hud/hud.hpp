@@ -15,13 +15,13 @@ public:
 
     void Init(GameEngine *game);
 
-    void displayHud(const int playerScore, const int highScore, const int numLives, const int level);
-    void displayPlayerScore(const int playerScore);
-    void displayHighScore(const int highScore);
-    void displayLevel(const int level);
-    void displayNumLives(const int numLives);
+    void DisplayHud(const int playerScore, const int highScore, const int numLives, const int level);
+    void DisplayPlayerScore(const int playerScore);
+    void DisplayHighScore(const int highScore);
+    void DisplayLevel(const int level);
+    void DisplayNumLives(const int numLives);
 
-    int getScoreBackgroundHeight() const noexcept { return scoreBackgroundHeight; }
+    sf::Vector2f GetScoreBackgroundSize() const noexcept { return SCORE_BACKGROUND_SIZE; }
 
 private:
     GameEngine *m_engine;
@@ -33,9 +33,9 @@ private:
 
     sf::RectangleShape scoreBackground;
 
-    static const sf::Color scoreBackgroundColour;
-    static const int scoreBackgroundWidth;
-    static const int scoreBackgroundHeight;
+    static const sf::Color SCORE_BG_COLOUR;
+    const sf::Vector2f SCORE_BACKGROUND_SIZE;
+    static const int NUM_LIVES_ELEVATION;
 };
 
 #endif // HUD_HPP
