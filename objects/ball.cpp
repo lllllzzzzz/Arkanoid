@@ -46,23 +46,23 @@ void Ball::Draw()
     m_engine->getWindow().draw(shape);
 }
 
-void Ball::setPos(const sf::Vector2f newPosition) noexcept
+void Ball::SetPos(const sf::Vector2f newPosition) noexcept
 {
     shape.setPosition(newPosition);
-    shadow.setPosition(newPosition.x + getRadius() / 2, newPosition.y + getRadius() / 2);
+    shadow.setPosition(newPosition.x + GetRadius() / 2, newPosition.y + GetRadius() / 2);
 }
 
-void Ball::setVelocity(const sf::Vector2f newVelocity) noexcept
+void Ball::SetVelocity(const sf::Vector2f newVelocity) noexcept
 {
     m_velocity = newVelocity;
 }
 
-int Ball::getRadius() const noexcept
+int Ball::GetRadius() const noexcept
 {
     return m_radius;
 }
 
-void Ball::update(/*const float mFT, */)
+void Ball::Update(/*const float mFT, */)
 {
     shape.move(m_velocity/* * mFT*/);
     shadow.move(m_velocity/* * mFT*/);
@@ -93,12 +93,12 @@ void Ball::SpeedUp() noexcept
     m_speed += SPEED_UP_FACTOR;
 }
 
-bool Ball::isDestroyed() const noexcept
+bool Ball::IsDestroyed() const noexcept
 {
     return m_isDestroyed;
 }
 
-void Ball::destroy() noexcept
+void Ball::Destroy() noexcept
 {
     m_isDestroyed = true;
 }
