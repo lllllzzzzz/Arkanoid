@@ -40,8 +40,10 @@
 
         inline bool IsGameRunning() const noexcept { return m_isGameRunning; }
         inline void SetGameRunning(const bool state) noexcept { m_isGameRunning = state; }
-        inline void SetLevel(const int level) noexcept { playerLevel = level; }
-        inline int GetLevel() const noexcept { return playerLevel; }
+        inline void SetLevel(const int level) noexcept { m_currentLevel = level; }
+        inline int GetLevel() const noexcept { return m_currentLevel; }
+        inline void SetHighScore(const int score) noexcept { m_highScore = score; }
+        inline int GetHighScore() const noexcept { return m_highScore; }
         inline bool IsBallLaunched() const noexcept { return m_isBallLaunched; }
         inline void SetBallLaunched(const bool state) noexcept { m_isBallLaunched = state; }
         inline bool IsSoundEnabled() const noexcept { return m_isSoundEnabled; }
@@ -98,10 +100,10 @@
 
         GameEngine *m_engine;
 
-        Shield shield;
-        Hud hud;
         Player m_player;
         BrickGrid brickGrid;
+        Shield shield;
+        Hud hud;
 
         std::vector<Ball> balls;
         std::vector<Powerup> powerups;
@@ -111,10 +113,8 @@
         std::vector<sf::Sound> sounds;
         sf::Music backgroundMusic;
 
-        int playerLives;
-        int playerLevel;
-        int playerScore;
-        int highScore;
+        int m_currentLevel;
+        int m_highScore;
 
         bool m_isSoundEnabled;
         bool m_isGameRunning;
@@ -126,7 +126,6 @@
         static const float ftSlice;*/
 
         static const sf::Color BACKGROUND_CLEAR_COLOUR;
-        static const sf::Vector2f BRICK_SIZE;
         static const int POINTS_BALL;
         static const int POINTS_PROJECTILE;
         static const int MAXIMUM_REFLECTION_ANGLE;
