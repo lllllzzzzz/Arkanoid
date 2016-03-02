@@ -14,10 +14,8 @@
 //const float PlayState::ftSlice = 1.f;
 
 const sf::Color PlayState::BACKGROUND_CLEAR_COLOUR = {0, 0, 0};
-const sf::Vector2f PlayState::BRICK_SIZE = {40, 20};
 const int PlayState::POINTS_BALL = 5;
 const int PlayState::POINTS_PROJECTILE = 3;
-const int PlayState::DEFAULT_PLAYER_LIVES = 2;
 const int PlayState::MAXIMUM_REFLECTION_ANGLE = ((3 * M_PI) / 12);
 const int PlayState::POWERUP_PROBABILITY = 25;
 const int PlayState::TOTAL_NUMBER_OF_LEVELS = 6;
@@ -42,9 +40,8 @@ PlayState PlayState::m_PlayState;
 //using namespace Arkanoid;
 
 PlayState::PlayState() :
-    highScore(0),
-    playerLives(0),
-    playerLevel(1),
+    m_currentLevel(1),
+    m_highScore(0),
     m_isSoundEnabled(true),
     m_isGameRunning(true),
     m_isBallLaunched(false)
@@ -97,6 +94,9 @@ void PlayState::Resume()
 
 void PlayState::HandleEvents()
 {
+    //std::cout << "PlayState HandleEvents()" << std::endl;
+    //backgroundMusic.play();
+
     //timePoint1 = std::chrono::high_resolution_clock::now();
 
     sf::Event event;
@@ -109,10 +109,10 @@ void PlayState::HandleEvents()
 
         if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::S) {
             if (m_player.GetPaddle().HasLaser()) {
-                projectiles.emplace_back(m_player.GetPaddle().x() - (m_player.GetPaddle().getSize().x / 2) + 8,
-                    m_player.GetPaddle().y() - m_player.GetPaddle().getSize().y);
-                projectiles.emplace_back(m_player.GetPaddle().x() + (m_player.GetPaddle().getSize().x / 2) - 8,
-                    m_player.GetPaddle().y() - m_player.GetPaddle().getSize().y);
+                projectiles.emplace_back(sf::Vector2f{m_player.GetPaddle().x() - (m_player.GetPaddle().GetSize().x / 2) + 8,
+                    m_player.GetPaddle().y() - m_player.GetPaddle().GetSize().y});
+                projectiles.emplace_back(sf::Vector2f{m_player.GetPaddle().x() + (m_player.GetPaddle().GetSize().x / 2) - 8,
+                    m_player.GetPaddle().y() - m_player.GetPaddle().GetSize().y});
 
                 if (IsSoundEnabled()) {
                     sounds.at(SoundEffect::FIRE_PROJECTILE).play();
@@ -141,7 +141,7 @@ void PlayState::HandleEvents()
         if (balls.size() == 1) {
             if (!IsBallLaunched()) {
                 SetBallLaunched(true);
-                balls.front().setVelocity({0, -balls.front().getSpeed()});
+                balls.front().SetVelocity({0, -balls.front().GetSpeed()});
             }
         }
     }
@@ -162,7 +162,7 @@ void PlayState::HandleEvents()
             NewGame();
         }
 
-        balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x(), m_player.GetPaddle().y() - ((m_player.GetPaddle().getSize().y / 2) + balls.front().getRadius())});
+        balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x(), m_player.GetPaddle().y() - ((m_player.GetPaddle().GetSize().y / 2) + balls.front().GetRadius())});
         SetBallLaunched(false);
         //if (isPlayerPlaying()) {
             if (IsSoundEnabled()) {
@@ -178,7 +178,7 @@ void PlayState::HandleEvents()
         if (shield.IsEnabled()) {
             TestCollision(shield, ball);
         } else if (ball.y() > m_engine->getWindowSize().y) {
-            ball.destroy();
+            ball.Destroy();
         }
 
         for (auto& brick : brickGrid.GetBricks()) {
@@ -216,19 +216,19 @@ void PlayState::Update()
 
     if (IsBallLaunched()) {
         for (auto& ball : balls) {
-            ball.update();
+            ball.Update();
         }
     } else {
-        balls.front().setPos({m_player.GetPaddle().x() - balls.front().getRadius() / 2, m_player.GetPaddle().y() - ((balls.front().getRadius() * 2) + 5)});
+        balls.front().SetPos({m_player.GetPaddle().x() - balls.front().GetRadius() / 2, m_player.GetPaddle().y() - ((balls.front().GetRadius() * 2) + 5)});
     }
 
     for (auto& powerup : powerups) {
-        powerup.update(m_engine->getWindowSize());
+        powerup.Update();
         //std::cout << "Updating powerup" << std::endl;
     }
 
     for (auto& projectile : projectiles) {
-        projectile.update(m_engine->getWindowSize());
+        projectile.Update(m_engine->getWindowSize());
         //std::cout << "Updating projectile" << std::endl;
     }
 
@@ -236,42 +236,44 @@ void PlayState::Update()
     for(; currentSlice >= ftSlice; currentSlice -= ftSlice) {*/
         //ball.update(/*ftStep, */m_engine->getWindowSize());
 
-        m_player.GetPaddle().update(/*ftStep, */m_engine->getWindowSize());
+        m_player.GetPaddle().Update(/*ftStep, */m_engine->getWindowSize());
 
         brickGrid.Update();
 
         // Remove destroyed balls from balls vector
         balls.erase(
             remove_if(begin(balls), end(balls),
-                [](const Ball& mBall) {return mBall.isDestroyed(); }),
+                [](const Ball& mBall) {return mBall.IsDestroyed(); }),
             end(balls)
         );
 
         // Remove destroyed powerups from powerups vector
         powerups.erase(
             remove_if(begin(powerups), end(powerups),
-                [](const Powerup& mPowerup) { return mPowerup.isDestroyed(); }),
+                [](const Powerup& mPowerup) { return mPowerup.IsDestroyed(); }),
             end(powerups)
         );
 
         // Remove destroyed projectiles from projectiles vector
         projectiles.erase(
             remove_if(begin(projectiles), end(projectiles),
-                [](const Projectile& mProjectile) { return mProjectile.isDestroyed(); }),
+                [](const Projectile& mProjectile) { return mProjectile.IsDestroyed(); }),
             end(projectiles)
         );
     //}
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::F)) {
         SetBallLaunched(true);
-        balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x() - balls.back().getRadius() / 2, m_player.GetPaddle().y() - 20});
+        balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x() - balls.back().GetRadius() / 2, m_player.GetPaddle().y() - 20});
         //balls.back().Init();
-        balls.back().setVelocity({0, -32});
+        balls.back().SetVelocity({0, -32});
     }
 }
 
 void PlayState::Draw()
 {
+    //std::cout << "PlayState Draw()" << std::endl;
+
     if (!IsGameRunning()) {
         return;
     }
@@ -286,32 +288,32 @@ void PlayState::Draw()
 
     // Draw bricks
     for (auto& brick : brickGrid.GetBricks()) {
-        if (brick.isVisible()) {
+        if (brick.IsVisible()) {
             brick.Draw();
         }
     }
 
     if (!IsBallLaunched()) {
-        balls.front().setPos({m_player.GetPaddle().x() - balls.front().getRadius() / 2, m_player.GetPaddle().y() - ((balls.front().getRadius() * 2) + 5)});
+        balls.front().SetPos({m_player.GetPaddle().x() - balls.front().GetRadius() / 2, m_player.GetPaddle().y() - ((balls.front().GetRadius() * 2) + 5)});
     }
 
     // Draw balls
     for (auto& ball : balls) {
-        if (!ball.isDestroyed()) {
+        if (!ball.IsDestroyed()) {
             ball.Draw();
         }
     }
 
     // Draw powerups
     for (auto& powerup : powerups) {
-        if (!powerup.isDestroyed()) {
+        if (!powerup.IsDestroyed()) {
             powerup.Draw();
         }
     }
 
     // Draw projectiles
     for (auto& projectile : projectiles) {
-        if (!projectile.isDestroyed()) {
+        if (!projectile.IsDestroyed()) {
             projectile.Draw();
         }
     }
@@ -335,7 +337,7 @@ void PlayState::Draw()
     m_engine->getWindow().draw(background.at(BackgroundObject::BORDER_CORNER_RIGHT));
 
     // Draw HUD
-    hud.displayHud(m_player.GetPoints(), highScore, m_player.GetLives(), GetLevel());
+    hud.displayHud(m_player.GetPoints(), GetHighScore(), m_player.GetLives(), GetLevel());
 
     m_engine->getWindow().display();
 
@@ -351,9 +353,7 @@ void PlayState::Draw()
 void PlayState::NewGame()
 {
     SetLevel(START_LEVEL);
-
-    highScore = std::max(m_player.GetPoints(), highScore);
-
+    SetHighScore(std::max(m_player.GetPoints(), GetHighScore()));
     m_player.Reset();
 
     brickGrid.GenerateGrid(GetLevel());
@@ -362,8 +362,8 @@ void PlayState::NewGame()
     projectiles.clear();
 
     balls.clear();
-    balls.emplace_back(m_engine, sf::Vector2f{m_engine->getWindowSize().x / 2, m_engine->getWindowSize().y - m_player.GetPaddle().getPos().y - m_player.GetPaddle().getSize().y});
-    balls.front().setPos({m_engine->getWindowSize().x, m_player.GetPaddle().top() - (balls.front().getRadius() * 2) + 1});
+    balls.emplace_back(m_engine, sf::Vector2f{m_engine->getWindowSize().x / 2, m_engine->getWindowSize().y - m_player.GetPaddle().GetPos().y - m_player.GetPaddle().GetSize().y});
+    balls.front().SetPos({m_engine->getWindowSize().x, m_player.GetPaddle().top() - (balls.front().GetRadius() * 2) + 1});
 
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::NEW_GAME).play();
@@ -375,7 +375,6 @@ void PlayState::RemovePowerups()
 {
     shield.SetEnabled(false);
     m_player.GetPaddle().SetLaserEnabled(false);
-    //m_player.GetPaddle().Shrink();
 }
 
 void PlayState::AddBonusPoints(const int level)
@@ -414,8 +413,8 @@ void PlayState::LoadLevel(const int level)
 
     SetBallLaunched(false);
     balls.clear();
-    balls.emplace_back(m_engine, sf::Vector2f{m_engine->getWindowSize().x / 2, m_engine->getWindowSize().y - m_player.GetPaddle().getPos().y - m_player.GetPaddle().getSize().y});
-    balls.front().setPos({m_engine->getWindowSize().x, m_player.GetPaddle().top() - (balls.front().getRadius() * 2) + 1});
+    balls.emplace_back(m_engine, sf::Vector2f{m_engine->getWindowSize().x / 2, m_engine->getWindowSize().y - m_player.GetPaddle().GetPos().y - m_player.GetPaddle().GetSize().y});
+    balls.front().SetPos({m_engine->getWindowSize().x, m_player.GetPaddle().top() - (balls.front().GetRadius() * 2) + 1});
 
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::NEW_GAME).play();
@@ -428,17 +427,17 @@ void PlayState::LoadLevel(const int level)
 sf::Vector2f PlayState::CalculatePaddleReflectionVector(Paddle& mPaddle, Ball& mBall)
 {
     // Calculate angle of reflection of the ball
-    float relativeIntersectX{abs(mPaddle.x() - mBall.x()) - 4};
-    float normalisedRelativeIntersectX{(relativeIntersectX / (m_player.GetPaddle().getSize().x / 2))};
-    float bounceAngle{normalisedRelativeIntersectX * /*MAXIMUM_REFLECTION_ANGLE*/(3 * M_PI) / 12};
+    const float RELATIVE_INTERSECT_X{abs(mPaddle.x() - mBall.x()) - 4};
+    const float NORMALISED_RELATIVE_INTERSECT_X{(RELATIVE_INTERSECT_X / (m_player.GetPaddle().GetSize().x / 2))};
+    const float BOUNCE_ANGLE{NORMALISED_RELATIVE_INTERSECT_X * /*MAXIMUM_REFLECTION_ANGLE*/(3 * M_PI) / 12};
 
     // Calculate vector of ball reflecting/bouncing off of paddle
     sf::Vector2f newBallVelocity;
-    newBallVelocity.x = mBall.getSpeed() * sin(bounceAngle);
-    newBallVelocity.y = -mBall.getSpeed() * cos(bounceAngle);
+    newBallVelocity.x = mBall.GetSpeed() * sin(BOUNCE_ANGLE);
+    newBallVelocity.y = -mBall.GetSpeed() * cos(BOUNCE_ANGLE);
     newBallVelocity.x = (mBall.x() < mPaddle.x()) ? -newBallVelocity.x : newBallVelocity.x;
 
-    std::cout << "sin: " << sin(bounceAngle) << ", cos: " << cos(bounceAngle) << std::endl;
+    std::cout << "sin: " << sin(BOUNCE_ANGLE) << ", cos: " << cos(BOUNCE_ANGLE) << std::endl;
 
     return newBallVelocity;
 }
@@ -461,11 +460,11 @@ sf::Vector2f PlayState::CalculateBrickReflectionVector(Brick& mBrick, Ball& mBal
 
     // Calculate vector of ball reflecting/bouncing off of brick
     if (abs(minOverlapX) < abs(minOverlapY)) {
-        newBallVelocity.x = -mBall.getVelocity().x;
-        newBallVelocity.y = (mBrick.y() < mBall.y()) ? abs(mBall.getVelocity().y) : -abs(mBall.getVelocity().y);
+        newBallVelocity.x = -mBall.GetVelocity().x;
+        newBallVelocity.y = (mBrick.y() < mBall.y()) ? abs(mBall.GetVelocity().y) : -abs(mBall.GetVelocity().y);
     } else {
-        newBallVelocity.x = (mBall.x() < mBrick.x()) ? -mBall.getVelocity().x : mBall.getVelocity().x;
-        newBallVelocity.y = ballFromTop ? -abs(mBall.getVelocity().y) : abs(mBall.getVelocity().y);
+        newBallVelocity.x = (mBall.x() < mBrick.x()) ? -mBall.GetVelocity().x : mBall.GetVelocity().x;
+        newBallVelocity.y = ballFromTop ? -abs(mBall.GetVelocity().y) : abs(mBall.GetVelocity().y);
     }
 
     return newBallVelocity;
@@ -480,13 +479,11 @@ bool PlayState::IsIntersecting(T1& mA, T2& mB)
 
 void PlayState::TestCollision(Paddle& mPaddle, Ball& mBall)
 {
-    //std::cout << "PlayState testCollision() paddle" << std::endl;
-
     if (!IsIntersecting(mPaddle, mBall)) {
         return;
     }
 
-    mBall.setVelocity(CalculatePaddleReflectionVector(mPaddle, mBall));
+    mBall.SetVelocity(CalculatePaddleReflectionVector(mPaddle, mBall));
 
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::PADDLE_COLLISION).play();
@@ -495,13 +492,11 @@ void PlayState::TestCollision(Paddle& mPaddle, Ball& mBall)
 
 void PlayState::TestCollision(Shield& mShield, Ball& mBall)
 {
-    //std::cout << "PlayState testCollision() paddle" << std::endl;
-
     if (mBall.bottom() < mShield.top()) {
         return;
     }
 
-    mBall.setVelocity({mBall.getVelocity().x, -mBall.getVelocity().y});
+    mBall.SetVelocity({mBall.GetVelocity().x, -mBall.GetVelocity().y});
 
     mShield.SetEnabled(false);
 
@@ -512,21 +507,19 @@ void PlayState::TestCollision(Shield& mShield, Ball& mBall)
 
 void PlayState::TestCollision(Brick& mBrick, Ball& mBall)
 {
-    //std::cout << "PlayState testCollision() brick" << std::endl;
-
     if (!IsIntersecting(mBrick, mBall)) {
         return;
     }
 
     if (mBrick.GetType() == 0) {
-        mBrick.destroy();
+        mBrick.Destroy();
     }
 
     m_player.GainPoints(POINTS_BALL);
 
-    mBall.setVelocity(CalculateBrickReflectionVector(mBrick, mBall));
+    mBall.SetVelocity(CalculateBrickReflectionVector(mBrick, mBall));
 
-    if (mBrick.isDestroyed()) {
+    if (mBrick.IsDestroyed()) {
         if (!((std::rand() % 100) % POWERUP_PROBABILITY)) {
             powerups.emplace_back(m_engine, sf::Vector2f{mBrick.x(), mBrick.y()});
         }
@@ -540,14 +533,12 @@ void PlayState::TestCollision(Brick& mBrick, Ball& mBall)
 void PlayState::TestCollision(Brick
 & mBrick, Projectile& mProjectile)
 {
-    //std::cout << "PlayState testCollision() brick" << std::endl;
-
     if (!IsIntersecting(mBrick, mProjectile)) {
         return;
     }
 
-    mBrick.destroy();
-    mProjectile.destroy();
+    mBrick.Destroy();
+    mProjectile.Destroy();
 
     m_player.GainPoints(POINTS_PROJECTILE);
 
@@ -558,13 +549,11 @@ void PlayState::TestCollision(Brick
 
 void PlayState::TestCollision(Paddle& mPaddle, Powerup& mPowerup)
 {
-    //std::cout << "PlayState testCollision() paddle" << std::endl;
-
     if (!IsIntersecting(mPaddle, mPowerup)) {
         return;
     }
 
-    mPowerup.destroy();
+    mPowerup.Destroy();
 
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::GAIN_POWERUP).play();
@@ -575,9 +564,9 @@ void PlayState::TestCollision(Paddle& mPaddle, Powerup& mPowerup)
 
 void PlayState::ApplyPowerup()
 {
-    const int RANDOM_POWERUP_NUMBER /*= std::rand() % TOTAL_NUMBER_OF_POWERUPS*/=3;
+    const int POWERUP_NUMBER = std::rand() % TOTAL_NUMBER_OF_POWERUPS;
 
-    switch (RANDOM_POWERUP_NUMBER) {
+    switch (POWERUP_NUMBER) {
         // Player gains a life
         case 0:
             if (m_player.GetLives() < MAX_LIVES) {
@@ -681,15 +670,11 @@ void PlayState::LoadResources()
         background.back().setOrigin(0, 0);
     }
 
-    //std::cout << "Resources loaded" << std::endl;
-
     LoadObjects();
 }
 
 void PlayState::LoadObjects()
 {
-    //std::cout << "Loading PlayState objects..." << std::endl;
-
     const int HUD_Y = hud.getScoreBackgroundHeight();
     const int WINDOW_X = m_engine->getWindowSize().x;
     const int WINDOW_Y = m_engine->getWindowSize().y;
@@ -754,6 +739,4 @@ void PlayState::LoadObjects()
     background.at(BackgroundObject::BACKGROUND).setPosition(0, 0);
     background.at(BackgroundObject::BACKGROUND).setSize({WINDOW_X, WINDOW_Y});
     background.at(BackgroundObject::BACKGROUND).setTexture(&m_engine->resourceMan.GetTexture("hexagon_pattern.png"));
-
-    //std::cout << "PlayState objects loaded" << std::endl;
 }
