@@ -17,23 +17,23 @@ public:
 
     void Draw();
 
-    void update(/*const float mFT, */);
-    void setPos(const sf::Vector2f newPosition) noexcept;
-    int getRadius() const noexcept;
-    bool isDestroyed() const noexcept;
+    void Update(/*const float mFT, */);
+    void SetPos(const sf::Vector2f newPosition) noexcept;
+    int GetRadius() const noexcept;
+    bool IsDestroyed() const noexcept;
 
-    void setVelocity(const sf::Vector2f newVelocity) noexcept;
-    sf::Vector2f getVelocity() const noexcept { return m_velocity; }
+    void SetVelocity(const sf::Vector2f newVelocity) noexcept;
+    sf::Vector2f GetVelocity() const noexcept { return m_velocity; }
 
-    void setSpeed(const int speed) noexcept { m_speed = speed; }
-    int getSpeed() const noexcept { return m_speed; }
+    void SetSpeed(const int speed) noexcept { m_speed = speed; }
+    int GetSpeed() const noexcept { return m_speed; }
 
     void SlowDown() noexcept;
     void SpeedUp() noexcept;
     bool IsSpedUp() const noexcept { return m_speed < DEFAULT_SPEED; }
     bool IsSlowedDown() const noexcept { return m_speed > DEFAULT_SPEED; }
     
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     sf::CircleShape shadow;
 
