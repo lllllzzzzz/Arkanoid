@@ -4,29 +4,33 @@
 #include <SFML\Window.hpp>
 #include <SFML\Graphics.hpp>
 
+#include "..\stateman\gameEngine.hpp"
 #include "rectangle.hpp"
 
 class Projectile : public Rectangle
 {
 public:
-    Projectile(float posX, float posY);
+    Projectile(GameEngine *game, const sf::Vector2f position);
     ~Projectile();
 
-    void update(/*const float mFT, */const int windowWidth, const int windowHeight);
+    void Update(/*const float mFT*/);
 
-    bool isDestroyed() const noexcept { return m_isDestroyed; }
-    void destroy() { m_isDestroyed = true; }
+    void Draw();
+
+    bool IsDestroyed() const noexcept { return m_isDestroyed; }
+    void Destroy() noexcept { m_isDestroyed = true; }
 
     sf::Texture texture;
 
 private:
+    GameEngine *m_engine;
+
     sf::Vector2f velocity;
     bool m_isDestroyed;
     int m_projectileVelocity;
 
-    static const int m_width;
-    static const int m_height;
-    static const int m_speedDefault;
+    static const sf::Vector2f SIZE;
+    static const int DEFAULT_SPEED;
 };
 
 #endif // PROJECTILE_HPP
