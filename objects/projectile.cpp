@@ -1,18 +1,19 @@
 #include "projectile.hpp"
 
-const int Projectile::m_width = 5;
-const int Projectile::m_height = 15;
-const int Projectile::m_speedDefault = 12;
+const sf::Vector2f Projectile::SIZE = {5, 15};
+const int Projectile::DEFAULT_SPEED = 12;
 
-Projectile::Projectile(float posX, float posY) :
-m_projectileVelocity(m_speedDefault),
-velocity(0, -m_speedDefault),
+Projectile::Projectile(GameEngine *game, const sf::Vector2f position) :
+m_projectileVelocity(DEFAULT_SPEED),
+velocity(0, -DEFAULT_SPEED),
 m_isDestroyed(false)
 {
-    shape.setPosition(posX, posY);
-    shape.setSize({m_width, m_height});
+    m_engine = game;
+
+    shape.setPosition(position);
+    shape.setSize(SIZE);
     shape.setFillColor({255, 255, 255});
-    shape.setOrigin(m_width / 2.f, m_height / 2.f);
+    shape.setOrigin(SIZE.x / 2.f, SIZE.y / 2.f);
     //shape.setTexture(&texture);
 }
 
@@ -21,12 +22,16 @@ Projectile::~Projectile()
 
 }
 
-void Projectile::update(const int windowWidth, const int windowHeight)
+void Projectile::Update()
 {
-    // Move projectile at velocity and angle specified by vector
     shape.move(velocity/* * mFT*/);
 
-    if (y() <= 0) {
-        destroy();
+    if (y() <= 30 + 20) {
+        Destroy();
     }
+}
+
+void Projectile::Draw()
+{
+    m_engine->getWindow().draw(shape);
 }
