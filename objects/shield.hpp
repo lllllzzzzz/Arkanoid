@@ -2,26 +2,31 @@
 #define SHIELD_HPP
 
 #include "rectangle.hpp"
+#include "..\stateman\gameEngine.hpp"
 
 class Shield : public Rectangle
 {
 public:
-    Shield(const float x, const float y);
+    Shield();
     ~Shield();
 
+    void Init(GameEngine *game);
+
+    void Draw();
+
     bool IsEnabled() const noexcept { return m_isEnabled; }
-    void Enable() { m_isEnabled = true; }
-    void Disable() { m_isEnabled = false; }
-    int getWidth() const noexcept { return m_width; }
-    int getHeight() const noexcept { return m_height; }
+    void SetEnabled(const bool state) noexcept { m_isEnabled = state; }
+    sf::Vector2f GetSize() const noexcept { return m_size; }
 
 private:
-    bool m_isEnabled;
-    int m_width;
-    int m_height;
+    GameEngine *m_engine;
 
-    static const int m_widthDefault;
-    static const int m_heightDefault;
+    bool m_isEnabled;
+    sf::Vector2f m_size;
+
+    static const int HEIGHT;
+    static const int ELEVATION;
+    static const sf::Color COLOUR;
 };
 
 #endif // SHIELD_HPP
