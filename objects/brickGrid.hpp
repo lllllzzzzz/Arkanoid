@@ -33,7 +33,7 @@ private:
     sf::Vector2f m_size;
     sf::Vector2f m_numBricks;
 
-    int m_currentLevel{1};
+    int m_currentLevel;
 
     static const int NUMBER_BLOCKS_TO_MOVE_DOWN;
     static const sf::Vector2f BRICK_SIZE;
