@@ -65,12 +65,8 @@ void BrickGrid::ResetGrid()
     }
 }
 
-void BrickGrid::MoveDown(/*const int numCells*/)
+void BrickGrid::MoveDown()
 {
-    //if (!numCells) {
-    //    return;
-    //}
-
     for (auto& brick : m_bricks) {
         brick.setPos({brick.x(), brick.y() + (brick.GetSize().y * NUMBER_BLOCKS_TO_MOVE_DOWN)});
     }
