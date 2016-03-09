@@ -15,9 +15,9 @@ Paddle::Paddle(const sf::Vector2f position, const sf::Vector2f size, sf::Color c
     m_newWidth(0),
     m_hasLaser(false)
 {
-    setPos(position);
-    setSize(size);
-    shadow.setFillColor(sf::Color(0, 0, 0, SHADOW_OPACITY));
+    SetPos(position);
+    SetSize(size);
+    shadow.setFillColor({0, 0, 0, SHADOW_OPACITY});
 }
 
 Paddle::~Paddle()
@@ -42,11 +42,11 @@ void Paddle::Draw()
 void Paddle::Reset()
 {
     shape.setPosition(m_engine->getWindowSize().x / 2, m_engine->getWindowSize().y - ELEVATION);
-    setSize(DEFAULT_SIZE);
-    setSpeed(DEFAULT_SPEED);
+    SetSize(DEFAULT_SIZE);
+    SetSpeed(DEFAULT_SPEED);
 }
 
-void Paddle::update(/*const float mFT, */const sf::Vector2f windowSize)
+void Paddle::Update(/*const float mFT, */const sf::Vector2f windowSize)
 {
     shape.move(velocity/* * mFT*/);
     shadow.move(velocity/* * mFT*/);
@@ -62,13 +62,13 @@ void Paddle::update(/*const float mFT, */const sf::Vector2f windowSize)
     }
 }
 
-void Paddle::setPos(const sf::Vector2f position) noexcept
+void Paddle::SetPos(const sf::Vector2f position) noexcept
 {
     shape.setPosition(position);
-    shadow.setPosition(position.x + (getSize().x / 4), position.y + (getSize().y / 2));
+    shadow.setPosition(position.x + (GetSize().x / 4), position.y + (GetSize().y / 2));
 }
 
-void Paddle::setSize(const sf::Vector2f size)
+void Paddle::SetSize(const sf::Vector2f size)
 {
     m_size = size;
 
@@ -80,32 +80,32 @@ void Paddle::setSize(const sf::Vector2f size)
     shadow.setPosition(x() + (size.x / 4), y() + (size.y / 2));
 }
 
-void Paddle::setSpeed(const int speed) noexcept
+void Paddle::SetSpeed(const int speed) noexcept
 {
     m_speed = speed;
 }
 
-int Paddle::getSpeed() const noexcept
+int Paddle::GetSpeed() const noexcept
 {
     return m_speed;
 }
 
 void Paddle::SpeedUp() noexcept
 {
-    setSpeed(getSpeed() + SPEED_UP_FACTOR);
+    SetSpeed(GetSpeed() + SPEED_UP_FACTOR);
 }
 
 void Paddle::SlowDown() noexcept
 {
-    setSpeed(getSpeed() + SLOW_DOWN_FACTOR);
+    SetSpeed(GetSpeed() + SLOW_DOWN_FACTOR);
 }
 
 void Paddle::Expand() noexcept
 {
-    setSize({getSize().x + EXPAND_FACTOR, getSize().y});
+    SetSize({GetSize().x + EXPAND_FACTOR, GetSize().y});
 }
 
 void Paddle::Shrink() noexcept
 {
-    setSize({getSize().x + SHRINK_FACTOR, getSize().y});
+    SetSize({GetSize().x + SHRINK_FACTOR, GetSize().y});
 }
