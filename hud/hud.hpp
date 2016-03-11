@@ -5,8 +5,6 @@
 #include "..\stateman\gameEngine.hpp"
 #include "..\states\gameState.hpp"
 
-//#include "..\stateman\gameEngine.hpp"
-
 class Hud
 {
 public:
