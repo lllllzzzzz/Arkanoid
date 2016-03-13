@@ -12,24 +12,19 @@ class Brick : public Rectangle
 public:
     Brick(GameEngine *game, const sf::Vector2f position, const sf::Color colour, const int type);
     ~Brick();
-
+    
     void Init(GameEngine *game);
-
-    void setPos(const sf::Vector2f newPosition);
-
     void Draw();
+    
+    void setPos(const sf::Vector2f newPosition);
 
     const bool isVisible() const noexcept;
     void setVisibility(const bool isVisible) noexcept;
-
-    int GetType() const noexcept { return m_type; }
-
-    sf::Vector2f GetSize() const noexcept { return m_size; }
-
     bool isDestroyed() const noexcept;
     void destroy() noexcept;
 
-    //Sprite sprite;
+    int GetType() const noexcept { return m_type; }
+    sf::Vector2f GetSize() const noexcept { return m_size; }
 
     sf::RectangleShape shadow;
 
