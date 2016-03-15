@@ -68,7 +68,6 @@ void GameEngine::Run()
 
 void GameEngine::HandleWindowEvents()
 {
-    // Poll window events
     sf::Event event;
     while (getWindow().pollEvent(event)) {
         if (isWindowMoving()) {
