@@ -48,8 +48,6 @@ PlayState::PlayState() :
     //lastFt{0.f},
     //currentSlice{0.f}
 {
-    //std::cout << "PlayState constructor" << std::endl;
-
     /*lastFt = 0.f;
     currentSlice = 0.f;*/
 
@@ -68,7 +66,6 @@ void PlayState::Init(GameEngine *game)
     m_player.Init(m_engine);
     brickGrid.Init(m_engine);
     hud.Init(m_engine);
-    //m_player.GetPaddle().Init(m_engine);
     shield.Init(m_engine);
 
     LoadResources();
@@ -94,7 +91,6 @@ void PlayState::Resume()
 
 void PlayState::HandleEvents()
 {
-    //std::cout << "PlayState HandleEvents()" << std::endl;
     //backgroundMusic.play();
 
     //timePoint1 = std::chrono::high_resolution_clock::now();
@@ -207,9 +203,6 @@ void PlayState::HandleEvents()
 
 void PlayState::Update()
 {
-    //std::cout << ftStep << ", " << ftSlice << "\n";
-    //std::cout << "PlayState Update()" << std::endl;
-
     if (!IsGameRunning()) {
         return;
     }
@@ -272,8 +265,6 @@ void PlayState::Update()
 
 void PlayState::Draw()
 {
-    //std::cout << "PlayState Draw()" << std::endl;
-
     if (!IsGameRunning()) {
         return;
     }
