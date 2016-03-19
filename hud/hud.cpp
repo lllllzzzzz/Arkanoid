@@ -1,7 +1,5 @@
 #include "hud.hpp"
 
-#include <windows.h>
-
 const sf::Color Hud::SCORE_BG_COLOUR = sf::Color::Black;
 const sf::Vector2f Hud::SCORE_BACKGROUND_SIZE = {480, 30};
 const int Hud::NUM_LIVES_ELEVATION = 10;
