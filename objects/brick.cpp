@@ -32,9 +32,7 @@ Brick::~Brick()
 
 void Brick::Init(GameEngine *game)
 {
-    //texture = m_engine->resourceMan.GetTexture("brick.png");
-
-    //shape.setTexture(&texture);
+    
 }
 
 void Brick::setPos(const sf::Vector2f newPosition)
