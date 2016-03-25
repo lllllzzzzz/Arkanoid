@@ -37,7 +37,7 @@ Ball::~Ball()
 
 void Ball::Init(GameEngine *game)
 {
-    //shape.setTexture(m_engine->resourceMan.GetTexture("ball.png"));
+    
 }
 
 void Ball::Draw()
