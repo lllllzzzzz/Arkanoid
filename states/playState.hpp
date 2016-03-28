@@ -2,7 +2,6 @@
 #define PLAY_STATE_HPP
 
 #include <SFML\Audio.hpp>
-//#include <chrono>
 
 #include "gameState.hpp"
 #include "..\hud\hud.hpp"
