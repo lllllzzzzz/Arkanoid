@@ -67,9 +67,6 @@
             return &m_PlayState;
         }
 
-        //std::chrono::high_resolution_clock::timePoint1;
-        //std::chrono::high_resolution_clock::timePoint2;
-
     private:
         enum /*class*/ SoundEffect : int {
             BRICK_COLLISION = 0,
