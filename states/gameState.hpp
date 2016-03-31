@@ -1,8 +1,6 @@
 #ifndef GAME_STATE_HPP
 #define GAME_STATE_HPP
 
-//#include "..\stateman\gameEngine.hpp"
-
 class GameEngine;
 
 //namespace Arkanoid
