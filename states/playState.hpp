@@ -79,7 +79,7 @@
             BRICKS_MOVE_DOWN = 7
         };
 
-        enum /*class*/ BackgroundObject : int {
+        enum BackgroundObject : int {
             BORDER_TOP = 0,
             BORDER_LEFT = 1,
             BORDER_RIGHT = 2,
