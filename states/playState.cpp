@@ -131,7 +131,6 @@ void PlayState::HandleEvents()
         m_engine->Quit();
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
         shield.SetEnabled(true);
-        //m_engine->pushState(/*PausedState::Instance()*/new PausedState());
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) {
         if (balls.size() == 1) {
             if (!IsBallLaunched()) {
