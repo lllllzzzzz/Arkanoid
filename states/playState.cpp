@@ -5,6 +5,7 @@
 //#include <chrono>
 
 #ifdef _WIN32
+//#include <windows.h>
 #endif
 
 #define M_PI (3.14159265359)
@@ -104,9 +105,9 @@ void PlayState::HandleEvents()
 
         if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::S) {
             if (m_player.GetPaddle().HasLaser()) {
-                projectiles.emplace_back(sf::Vector2f{m_player.GetPaddle().x() - (m_player.GetPaddle().GetSize().x / 2) + 8,
+                projectiles.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x() - (m_player.GetPaddle().GetSize().x / 2) + 8,
                     m_player.GetPaddle().y() - m_player.GetPaddle().GetSize().y});
-                projectiles.emplace_back(sf::Vector2f{m_player.GetPaddle().x() + (m_player.GetPaddle().GetSize().x / 2) - 8,
+                projectiles.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x() + (m_player.GetPaddle().GetSize().x / 2) - 8,
                     m_player.GetPaddle().y() - m_player.GetPaddle().GetSize().y});
 
                 if (IsSoundEnabled()) {
@@ -123,7 +124,6 @@ void PlayState::HandleEvents()
 
     if (!IsGameRunning()) {
         return;
-
     }
 
     // Handle player input
@@ -131,6 +131,7 @@ void PlayState::HandleEvents()
         m_engine->Quit();
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
         shield.SetEnabled(true);
+        //m_engine->pushState(/*PausedState::Instance()*/new PausedState());
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) {
         if (balls.size() == 1) {
             if (!IsBallLaunched()) {
@@ -158,11 +159,10 @@ void PlayState::HandleEvents()
 
         balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x(), m_player.GetPaddle().y() - ((m_player.GetPaddle().GetSize().y / 2) + balls.front().GetRadius())});
         SetBallLaunched(false);
-        //if (isPlayerPlaying()) {
-            if (IsSoundEnabled()) {
-                sounds.at(SoundEffect::NEW_GAME).play();
-            }
-        //}
+
+        if (IsSoundEnabled()) {
+            sounds.at(SoundEffect::NEW_GAME).play();
+        }
     }
 
     // Perform collision detection between all balls and paddle/shield/bricks
@@ -201,6 +201,8 @@ void PlayState::HandleEvents()
 
 void PlayState::Update()
 {
+    //std::cout << ftStep << ", " << ftSlice << "\n";
+
     if (!IsGameRunning()) {
         return;
     }
@@ -219,13 +221,12 @@ void PlayState::Update()
     }
 
     for (auto& projectile : projectiles) {
-        projectile.Update(m_engine->getWindowSize());
+        projectile.Update();
         //std::cout << "Updating projectile" << std::endl;
     }
 
     /*currentSlice += lastFt;
     for(; currentSlice >= ftSlice; currentSlice -= ftSlice) {*/
-        //ball.update(/*ftStep, */m_engine->getWindowSize());
 
         m_player.GetPaddle().Update(/*ftStep, */m_engine->getWindowSize());
 
@@ -256,7 +257,6 @@ void PlayState::Update()
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::F)) {
         SetBallLaunched(true);
         balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x() - balls.back().GetRadius() / 2, m_player.GetPaddle().y() - 20});
-        //balls.back().Init();
         balls.back().SetVelocity({0, -32});
     }
 }
@@ -287,16 +287,32 @@ void PlayState::Draw()
     }
 
     // Draw balls
-    for (auto& ball : balls) {
-        if (!ball.IsDestroyed()) {
-            ball.Draw();
+    //for (auto& ball : balls) {
+    //    if (!ball.IsDestroyed()) {
+    //        ball.Draw();
+    //    }
+    //}
+
+    // Draw balls in reverse to fix bug where shadows appear on top
+    // of the balls
+    for (int i = balls.size() - 1; i >= 0; i--) {
+        if (!balls.at(i).IsDestroyed()) {
+            balls.at(i).Draw();
         }
     }
 
     // Draw powerups
-    for (auto& powerup : powerups) {
-        if (!powerup.IsDestroyed()) {
-            powerup.Draw();
+    //for (auto& powerup : powerups) {
+    //    if (!powerup.IsDestroyed()) {
+    //        powerup.Draw();
+    //    }
+    //}
+
+    // Draw powerups in reverse to fix bug where shadows appear on top
+    // of the powerups
+    for (int i = powerups.size() - 1; i >= 0; i--) {
+        if (!powerups.at(i).IsDestroyed()) {
+            powerups.at(i).Draw();
         }
     }
 
@@ -354,6 +370,8 @@ void PlayState::NewGame()
     balls.emplace_back(m_engine, sf::Vector2f{m_engine->getWindowSize().x / 2, m_engine->getWindowSize().y - m_player.GetPaddle().GetPos().y - m_player.GetPaddle().GetSize().y});
     balls.front().SetPos({m_engine->getWindowSize().x, m_player.GetPaddle().top() - (balls.front().GetRadius() * 2) + 1});
 
+    SetBallLaunched(false);
+
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::NEW_GAME).play();
         backgroundMusic.play();
@@ -364,6 +382,7 @@ void PlayState::RemovePowerups()
 {
     shield.SetEnabled(false);
     m_player.GetPaddle().SetLaserEnabled(false);
+    m_player.GetPaddle().Reset();
 }
 
 void PlayState::AddBonusPoints(const int level)
@@ -426,7 +445,7 @@ sf::Vector2f PlayState::CalculatePaddleReflectionVector(Paddle& mPaddle, Ball& m
     newBallVelocity.y = -mBall.GetSpeed() * cos(BOUNCE_ANGLE);
     newBallVelocity.x = (mBall.x() < mPaddle.x()) ? -newBallVelocity.x : newBallVelocity.x;
 
-    std::cout << "sin: " << sin(BOUNCE_ANGLE) << ", cos: " << cos(BOUNCE_ANGLE) << std::endl;
+    //std::cout << "sin: " << sin(BOUNCE_ANGLE) << ", cos: " << cos(BOUNCE_ANGLE) << std::endl;
 
     return newBallVelocity;
 }
