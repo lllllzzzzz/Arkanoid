@@ -37,7 +37,7 @@ Ball::~Ball()
 
 void Ball::Init(GameEngine *game)
 {
-    
+    //shape.setTexture(m_engine->resourceMan.GetTexture("ball.png"));
 }
 
 void Ball::Draw()
@@ -69,15 +69,21 @@ void Ball::Update(/*const float mFT, */)
 
     // Rebound ball off of sides of window
     if (left() <= 20) {
+        SetPos({20 + GetRadius(), y()});
+        //SetVelocity({0, 0});
         m_velocity.x = -m_velocity.x;
         m_hitBordersSound.play();
-    } else if (right() >= m_engine->getWindowSize().x - 20 - 10) {
+    } else if (right() >= m_engine->getWindowSize().x - 20) {
+        SetPos({m_engine->getWindowSize().x - 20 - GetRadius() * 2, y()});
+        //SetVelocity({0, 0});
         m_velocity.x = -m_velocity.x;
         m_hitBordersSound.play();
     }
 
     // Rebound ball off of top of window
-    if (top() < (30 + 20)) {
+    if (top() <= (30 + 20)) {
+        SetPos({x(), 30 + 20 + GetRadius()});
+        //SetVelocity({0, 0});
         m_velocity.y = m_speed;
         m_hitBordersSound.play();
     }
