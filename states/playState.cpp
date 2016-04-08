@@ -155,13 +155,13 @@ void PlayState::HandleEvents()
 
         if (!m_player.GainLives(-1)) {
             NewGame();
-        }
+        } else {
+            balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x(), m_player.GetPaddle().y() - ((m_player.GetPaddle().GetSize().y / 2) + balls.front().GetRadius())});
+            SetBallLaunched(false);
 
-        balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x(), m_player.GetPaddle().y() - ((m_player.GetPaddle().GetSize().y / 2) + balls.front().GetRadius())});
-        SetBallLaunched(false);
-
-        if (IsSoundEnabled()) {
-            sounds.at(SoundEffect::NEW_GAME).play();
+            if (IsSoundEnabled()) {
+                sounds.at(SoundEffect::NEW_GAME).play();
+            }
         }
     }
 
@@ -368,7 +368,7 @@ void PlayState::NewGame()
 
     balls.clear();
     balls.emplace_back(m_engine, sf::Vector2f{m_engine->getWindowSize().x / 2, m_engine->getWindowSize().y - m_player.GetPaddle().GetPos().y - m_player.GetPaddle().GetSize().y});
-    balls.front().SetPos({m_engine->getWindowSize().x, m_player.GetPaddle().top() - (balls.front().GetRadius() * 2) + 1});
+    //balls.front().SetPos({m_engine->getWindowSize().x, m_player.GetPaddle().top() - (balls.front().GetRadius() * 2) + 1});
 
     SetBallLaunched(false);
 
