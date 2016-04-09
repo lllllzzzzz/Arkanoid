@@ -2,6 +2,7 @@
 #define PLAY_STATE_HPP
 
 #include <SFML\Audio.hpp>
+//#include <chrono>
 
 #include "gameState.hpp"
 #include "..\hud\hud.hpp"
@@ -67,6 +68,9 @@
             return &m_PlayState;
         }
 
+        //std::chrono::high_resolution_clock::timePoint1;
+        //std::chrono::high_resolution_clock::timePoint2;
+
     private:
         enum /*class*/ SoundEffect : int {
             BRICK_COLLISION = 0,
@@ -76,10 +80,11 @@
             GAIN_POWERUP = 4,
             FIRE_PROJECTILE = 5,
             SHIELD_BOUNCE = 6,
-            BRICKS_MOVE_DOWN = 7
+            BRICKS_MOVE_DOWN = 7,
+            PAUSE_GAME = 8
         };
 
-        enum BackgroundObject : int {
+        enum /*class*/ BackgroundObject : int {
             BORDER_TOP = 0,
             BORDER_LEFT = 1,
             BORDER_RIGHT = 2,
