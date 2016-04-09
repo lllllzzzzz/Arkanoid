@@ -20,7 +20,7 @@ const int PlayState::MAXIMUM_REFLECTION_ANGLE = ((3 * M_PI) / 12);
 const int PlayState::POWERUP_PROBABILITY = 25;
 const int PlayState::TOTAL_NUMBER_OF_LEVELS = 6;
 const int PlayState::TOTAL_NUMBER_OF_POWERUPS = 8;
-const int PlayState::TOTAL_NUMBER_OF_SOUNDS = 8;
+const int PlayState::TOTAL_NUMBER_OF_SOUNDS = 9;
 const int PlayState::BONUS_POINTS_SHIELD = 50;
 const int PlayState::BONUS_POINTS_LASER = 40;
 const int PlayState::BONUS_POINTS_EXPANDED = 25;
@@ -98,9 +98,20 @@ void PlayState::HandleEvents()
     sf::Event event;
     while (m_engine->getWindow().pollEvent(event)) {
         if (event.type == sf::Event::LostFocus) {
-            SetGameRunning(false);
+            if (IsGameRunning()) {
+                SetGameRunning(false);
+                sounds.at(SoundEffect::PAUSE_GAME).play();
+            }
         } else if (event.type == sf::Event::GainedFocus) {
-            SetGameRunning(true);
+            if (!IsGameRunning()) {
+                SetGameRunning(true);
+                sounds.at(SoundEffect::PAUSE_GAME).play();
+            }
+        } else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
+            if (!IsGameRunning()) {
+                SetGameRunning(true);
+                sounds.at(SoundEffect::PAUSE_GAME).play();
+            }
         }
 
         if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::S) {
@@ -263,9 +274,9 @@ void PlayState::Update()
 
 void PlayState::Draw()
 {
-    if (!IsGameRunning()) {
+    /*if (!IsGameRunning()) {
         return;
-    }
+    }*/
 
     m_engine->getWindow().clear(BACKGROUND_CLEAR_COLOUR);
 
@@ -657,6 +668,7 @@ void PlayState::LoadResources()
         sounds.emplace_back(sf::Sound());
     }
 
+    // Load sound resources into sounds vector
     sounds.at(SoundEffect::BRICK_COLLISION).setBuffer(m_engine->resourceMan.GetSound("brick_collision.wav"));
     sounds.at(SoundEffect::LOSE_LIFE).setBuffer(m_engine->resourceMan.GetSound("lose_life.wav"));
     sounds.at(SoundEffect::NEW_GAME).setBuffer(m_engine->resourceMan.GetSound("new_game.wav"));
@@ -665,6 +677,7 @@ void PlayState::LoadResources()
     sounds.at(SoundEffect::BRICKS_MOVE_DOWN).setBuffer(m_engine->resourceMan.GetSound("bricks_move_down.wav"));
     sounds.at(SoundEffect::GAIN_POWERUP).setBuffer(m_engine->resourceMan.GetSound("gain_powerup.wav"));
     sounds.at(SoundEffect::FIRE_PROJECTILE).setBuffer(m_engine->resourceMan.GetSound("fire_projectile.wav"));
+    sounds.at(SoundEffect::PAUSE_GAME).setBuffer(m_engine->resourceMan.GetSound("pause_game.wav"));
 
     if (!backgroundMusic.openFromFile("data\\bgm\\bgm_action_1.ogg")) {
         #ifdef _WIN32
