@@ -5,6 +5,8 @@
 #include "..\stateman\gameEngine.hpp"
 #include "..\states\gameState.hpp"
 
+//#include "..\stateman\gameEngine.hpp"
+
 class Hud
 {
 public:
@@ -13,13 +15,14 @@ public:
 
     void Init(GameEngine *game);
 
-    void DisplayHud(const int playerScore, const int highScore, const int numLives, const int level);
-    void DisplayPlayerScore(const int playerScore);
-    void DisplayHighScore(const int highScore);
-    void DisplayLevel(const int level);
-    void DisplayNumLives(const int numLives);
+    void displayHud(const int playerScore, const int highScore, const int numLives, const int level, const bool gameIsRunning);
+    void displayPlayerScore(const int playerScore);
+    void displayHighScore(const int highScore);
+    void displayLevel(const int level);
+    void displayNumLives(const int numLives);
+    void displayPaused();
 
-    sf::Vector2f GetScoreBackgroundSize() const noexcept { return SCORE_BACKGROUND_SIZE; }
+    int getScoreBackgroundHeight() const noexcept { return SCORE_BACKGROUND_HEIGHT; }
 
 private:
     GameEngine *m_engine;
@@ -31,9 +34,21 @@ private:
 
     sf::RectangleShape scoreBackground;
 
-    static const sf::Color SCORE_BG_COLOUR;
-    const sf::Vector2f SCORE_BACKGROUND_SIZE;
-    static const int NUM_LIVES_ELEVATION;
+    static const int SCORE_BACKGROUND_WIDTH;
+    static const int SCORE_BACKGROUND_HEIGHT;
+    static const int TEXT_SIZE;
+    static const int LIVES_SPACING_X;
+    static const int LIVES_OFFSET_X;
+    static const int LIVES_ELEVATION;
+    static const sf::Color SCORE_BACKGROUND_COLOUR;
+    static const sf::Color PLAYER_SCORE_COLOUR;
+    static const sf::Color HIGH_SCORE_COLOUR;
+    static const sf::Color LEVEL_COLOUR;
+    static const sf::Vector2f PLAYER_SCORE_POSITION;
+    static const sf::Vector2f HIGH_SCORE_POSITION;
+    static const sf::Vector2f LEVEL_POSITION;
+    static const sf::Vector2f PAUSED_POSITION;
+    static const sf::Vector2f LIVES_SIZE;
 };
 
 #endif // HUD_HPP
