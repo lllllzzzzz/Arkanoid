@@ -21,6 +21,7 @@ public:
     void displayLevel(const int level);
     void displayNumLives(const int numLives);
     void displayPaused();
+    void displayWinLose(bool playerWon);
 
     int getScoreBackgroundHeight() const noexcept { return SCORE_BACKGROUND_HEIGHT; }
 
@@ -33,14 +34,20 @@ private:
     sf::Texture textureLives;
 
     sf::RectangleShape scoreBackground;
+    sf::RectangleShape winLoseBackground;
+    sf::RectangleShape winLoseBackgroundBorder;
 
     static const int SCORE_BACKGROUND_WIDTH;
     static const int SCORE_BACKGROUND_HEIGHT;
+    static const sf::Vector2f WIN_LOSE_BACKGROUND_SIZE;
+    static const sf::Vector2f WIN_LOSE_BACKGROUND_BORDER_SIZE;
     static const int TEXT_SIZE;
     static const int LIVES_SPACING_X;
     static const int LIVES_OFFSET_X;
     static const int LIVES_ELEVATION;
     static const sf::Color SCORE_BACKGROUND_COLOUR;
+    static const sf::Color WIN_LOSE_BACKGROUND_COLOUR;
+    static const sf::Color WIN_LOSE_BACKGROUND_BORDER_COLOUR;
     static const sf::Color PLAYER_SCORE_COLOUR;
     static const sf::Color HIGH_SCORE_COLOUR;
     static const sf::Color LEVEL_COLOUR;
