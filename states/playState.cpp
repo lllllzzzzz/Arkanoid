@@ -15,10 +15,10 @@
 
 const sf::Color PlayState::BACKGROUND_CLEAR_COLOUR = {0, 0, 0};
 const int PlayState::POINTS_BALL = 5;
-const int PlayState::POINTS_PROJECTILE = 3;
+const int PlayState::POINTS_PROJECTILE = 1;
 const int PlayState::MAXIMUM_REFLECTION_ANGLE = ((3 * M_PI) / 12);
 const int PlayState::POWERUP_PROBABILITY = 25;
-const int PlayState::TOTAL_NUMBER_OF_LEVELS = 6;
+const int PlayState::TOTAL_NUMBER_OF_LEVELS = 7;
 const int PlayState::TOTAL_NUMBER_OF_POWERUPS = 8;
 const int PlayState::TOTAL_NUMBER_OF_SOUNDS = 9;
 const int PlayState::BONUS_POINTS_SHIELD = 50;
@@ -42,6 +42,7 @@ PlayState PlayState::m_PlayState;
 PlayState::PlayState() :
     m_currentLevel(1),
     m_highScore(0),
+    m_isGameOver(false),
     m_isSoundEnabled(true),
     m_isGameRunning(true),
     m_isBallLaunched(false)
@@ -95,26 +96,25 @@ void PlayState::HandleEvents()
 
     //timePoint1 = std::chrono::high_resolution_clock::now();
 
+    // Handle window events
     sf::Event event;
     while (m_engine->getWindow().pollEvent(event)) {
-        if (event.type == sf::Event::LostFocus) {
+        if (m_engine->isWindowMoving()) {
+            m_engine->getWindow().setPosition({(sf::Mouse::getPosition().x - m_engine->getWindowSize().x / 2), sf::Mouse::getPosition().y - m_engine->getWindowSize().y / 2});
+        } if (event.type == sf::Event::MouseButtonPressed) {
+            m_engine->moveWindow(true);
+        } else if (event.type == sf::Event::MouseButtonReleased) {
+            m_engine->moveWindow(false);
+        } else if (event.type == sf::Event::Closed) {
+            m_engine->Quit();
+        } else if (event.type == sf::Event::LostFocus) {
             if (IsGameRunning()) {
                 SetGameRunning(false);
                 sounds.at(SoundEffect::PAUSE_GAME).play();
             }
-        } else if (event.type == sf::Event::GainedFocus) {
-            if (!IsGameRunning()) {
-                SetGameRunning(true);
-                sounds.at(SoundEffect::PAUSE_GAME).play();
-            }
-        } else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
-            if (!IsGameRunning()) {
-                SetGameRunning(true);
-                sounds.at(SoundEffect::PAUSE_GAME).play();
-            }
-        }
-
-        if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::S) {
+        // Press S key to fire projectiles
+        } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::S) {
+            // If player has the laser, fire projectiles
             if (m_player.GetPaddle().HasLaser()) {
                 projectiles.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x() - (m_player.GetPaddle().GetSize().x / 2) + 8,
                     m_player.GetPaddle().y() - m_player.GetPaddle().GetSize().y});
@@ -125,10 +125,19 @@ void PlayState::HandleEvents()
                     sounds.at(SoundEffect::FIRE_PROJECTILE).play();
                 }
             }
+        // Press Q key to pause/unpause game
+        } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::Q) {
+            SetGameRunning(!IsGameRunning());
+            sounds.at(SoundEffect::PAUSE_GAME).play();
 
+        // TODO: Remove this code when game is finished
         } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::G) {
             brickGrid.Clear();
+        // Press R for new game
         } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::R) {
+            m_player.SetPoints(0);
+            NewGame();
+        } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::T) {
             brickGrid.MoveDown();
         }
     }
@@ -137,12 +146,16 @@ void PlayState::HandleEvents()
         return;
     }
 
+    if (IsGameOver()) {
+        hud.displayHud(m_player.GetPoints(), GetHighScore(), m_player.GetLives(), GetLevel(), !IsGameRunning());
+        return;
+    }
+
     // Handle player input
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
         m_engine->Quit();
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
         shield.SetEnabled(true);
-        //m_engine->pushState(/*PausedState::Instance()*/new PausedState());
     } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) {
         if (balls.size() == 1) {
             if (!IsBallLaunched()) {
@@ -156,13 +169,20 @@ void PlayState::HandleEvents()
         NewGame();
     }
 
-    if (brickGrid.IsEmpty()) {
+    if (brickGrid.IsEmpty() && powerups.empty()) {
         AddBonusPoints(GetLevel());
-        LoadLevel(GetLevel() + 1);
+        if (GetLevel() == TOTAL_NUMBER_OF_LEVELS - 1) {
+            SetGameOver(true);
+            //GameOver(true);
+        } else {
+            LoadLevel(GetLevel() + 1);
+        }
     }
 
+    // Balls are empty; player loses a life
     if (balls.empty()) {
         RemovePowerups();
+        powerups.clear();
 
         if (!m_player.GainLives(-1)) {
             NewGame();
@@ -215,6 +235,11 @@ void PlayState::Update()
     //std::cout << ftStep << ", " << ftSlice << "\n";
 
     if (!IsGameRunning()) {
+        return;
+    }
+
+    if (IsGameOver()) {
+        hud.displayHud(m_player.GetPoints(), GetHighScore(), m_player.GetLives(), GetLevel(), !IsGameRunning());
         return;
     }
 
@@ -353,7 +378,7 @@ void PlayState::Draw()
     m_engine->getWindow().draw(background.at(BackgroundObject::BORDER_CORNER_RIGHT));
 
     // Draw HUD
-    hud.displayHud(m_player.GetPoints(), GetHighScore(), m_player.GetLives(), GetLevel());
+    hud.displayHud(m_player.GetPoints(), GetHighScore(), m_player.GetLives(), GetLevel(), IsGameRunning());
 
     m_engine->getWindow().display();
 
@@ -374,6 +399,8 @@ void PlayState::NewGame()
 
     brickGrid.GenerateGrid(GetLevel());
 
+    RemovePowerups();
+
     powerups.clear();
     projectiles.clear();
 
@@ -387,6 +414,10 @@ void PlayState::NewGame()
         sounds.at(SoundEffect::NEW_GAME).play();
         backgroundMusic.play();
     }
+}
+
+void PlayState::GameOver(bool playerWon) {
+    hud.displayWinLose(playerWon);
 }
 
 void PlayState::RemovePowerups()
@@ -420,6 +451,8 @@ void PlayState::AddBonusPoints(const int level)
 
 void PlayState::LoadLevel(const int level)
 {
+     GameOver(true);
+
     if (level < 1) {
         return;
     }
