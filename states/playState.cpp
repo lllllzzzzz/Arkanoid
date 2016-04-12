@@ -138,7 +138,9 @@ void PlayState::HandleEvents()
             m_player.SetPoints(0);
             NewGame();
         } else if (event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::T) {
-            brickGrid.MoveDown();
+            //brickGrid.MoveDown();
+            powerups.emplace_back(m_engine, sf::Vector2f{100, 200});
+
         }
     }
 
@@ -191,7 +193,7 @@ void PlayState::HandleEvents()
             SetBallLaunched(false);
 
             if (IsSoundEnabled()) {
-                sounds.at(SoundEffect::NEW_GAME).play();
+                sounds.at(SoundEffect::LOSE_LIFE).play();
             }
         }
     }
@@ -412,7 +414,7 @@ void PlayState::NewGame()
 
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::NEW_GAME).play();
-        backgroundMusic.play();
+        //backgroundMusic.play();
     }
 }
 
@@ -470,7 +472,7 @@ void PlayState::LoadLevel(const int level)
 
     if (IsSoundEnabled()) {
         sounds.at(SoundEffect::NEW_GAME).play();
-        backgroundMusic.play();
+        //backgroundMusic.play();
     }
 
     brickGrid.GenerateGrid(level);
@@ -650,7 +652,12 @@ void PlayState::ApplyPowerup()
 
         // Player gets a new ball
         case 3:
-            balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x() - balls.back().radius() / 2, m_player.GetPaddle().y() -20});
+            //balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x() - balls.back().radius() / 2, m_player.GetPaddle().y() - 20});
+            if (IsBallLaunched()) {
+                const sf::Vector2f NEW_BALL_VELOCITY = -balls.back().GetVelocity();
+                balls.emplace_back(m_engine, balls.back().GetPos());
+                balls.back().SetVelocity(NEW_BALL_VELOCITY);
+            }
             break;
 
         // Player speeds up
