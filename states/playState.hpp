@@ -38,6 +38,8 @@
         void LoadLevel(const int level);
         void GenerateNewBrickGrid(const int level);
 
+        void GameOver(bool playerWon);
+
         inline bool IsGameRunning() const noexcept { return m_isGameRunning; }
         inline void SetGameRunning(const bool state) noexcept { m_isGameRunning = state; }
         inline void SetLevel(const int level) noexcept { m_currentLevel = level; }
@@ -48,6 +50,8 @@
         inline void SetBallLaunched(const bool state) noexcept { m_isBallLaunched = state; }
         inline bool IsSoundEnabled() const noexcept { return m_isSoundEnabled; }
         inline void SetSoundEnabled(const bool state) noexcept { m_isSoundEnabled = state; }
+        inline bool IsGameOver() const noexcept { return m_isGameOver; }
+        inline void SetGameOver(const bool state) noexcept { m_isGameOver = state; }
 
         void ApplyPowerup();
         void RemovePowerups();
@@ -117,6 +121,8 @@
         int m_currentLevel;
         int m_highScore;
 
+        bool m_isGameOver;
+
         bool m_isSoundEnabled;
         bool m_isGameRunning;
         bool m_isBallLaunched;
@@ -148,6 +154,8 @@
         static const int POINTS_PADDLE_ALREADY_SPED_UP;
         static const int POINTS_BALLS_ALREADY_SLOWED_DOWN;
         static const int START_LEVEL;
+        static const int SIDE_BORDER_WIDTH;
+        static const int TOP_BORDER_HEIGHT;
     };
 //}
 
