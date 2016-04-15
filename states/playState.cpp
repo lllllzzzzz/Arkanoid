@@ -34,6 +34,8 @@ const int PlayState::POINTS_LASER_ALREADY_ENABLED = 30;
 const int PlayState::POINTS_PADDLE_ALREADY_SPED_UP = 20;
 const int PlayState::POINTS_BALLS_ALREADY_SLOWED_DOWN = 20;
 const int PlayState::START_LEVEL = 1;
+const int PlayState::SIDE_BORDER_WIDTH = 20;
+const int PlayState::TOP_BORDER_HEIGHT = 20;
 
 PlayState PlayState::m_PlayState;
 
@@ -740,8 +742,8 @@ void PlayState::LoadObjects()
     const int WINDOW_X = m_engine->getWindowSize().x;
     const int WINDOW_Y = m_engine->getWindowSize().y;
 
-    static const sf::Vector2f BORDER_CORNER_LEFT_SIZE = {20, 20};
-    static const sf::Vector2f BORDER_CORNER_RIGHT_SIZE = {20, 20};
+    static const sf::Vector2f BORDER_CORNER_LEFT_SIZE = {SIDE_BORDER_WIDTH, TOP_BORDER_HEIGHT};
+    static const sf::Vector2f BORDER_CORNER_RIGHT_SIZE = {SIDE_BORDER_WIDTH, TOP_BORDER_HEIGHT};
 
     // Set up left border corner shape
     background.at(BackgroundObject::BORDER_CORNER_LEFT).setPosition(0, HUD_Y);
@@ -761,19 +763,19 @@ void PlayState::LoadObjects()
 
     // Set up top border shape
     background.at(BackgroundObject::BORDER_TOP).setPosition(CORNER_LEFT_X, HUD_Y);
-    background.at(BackgroundObject::BORDER_TOP).setSize({WINDOW_X - CORNER_LEFT_X - CORNER_RIGHT_X, 20});
+    background.at(BackgroundObject::BORDER_TOP).setSize({WINDOW_X - CORNER_LEFT_X - CORNER_RIGHT_X, TOP_BORDER_HEIGHT});
     background.at(BackgroundObject::BORDER_TOP).setTexture(&m_engine->resourceMan.GetTexture("border_top.png"));
 
     const int BORDER_TOP_Y = background.at(BackgroundObject::BORDER_TOP).getSize().y;
 
     // Set up left border shape
     background.at(BackgroundObject::BORDER_LEFT).setPosition(0, HUD_Y + CORNER_LEFT_Y);
-    background.at(BackgroundObject::BORDER_LEFT).setSize({20, WINDOW_Y - HUD_Y - CORNER_LEFT_Y});
+    background.at(BackgroundObject::BORDER_LEFT).setSize({SIDE_BORDER_WIDTH, WINDOW_Y - HUD_Y - CORNER_LEFT_Y});
     background.at(BackgroundObject::BORDER_LEFT).setTexture(&m_engine->resourceMan.GetTexture("border_side.png"));
 
     // Set up right border shape
-    background.at(BackgroundObject::BORDER_RIGHT).setPosition(WINDOW_X - CORNER_LEFT_X, HUD_Y + CORNER_RIGHT_Y);
-    background.at(BackgroundObject::BORDER_RIGHT).setSize({20, WINDOW_Y - HUD_Y - CORNER_RIGHT_Y});
+    background.at(BackgroundObject::BORDER_RIGHT).setPosition(WINDOW_X - /*CORNER_LEFT_X*/ SIDE_BORDER_WIDTH, HUD_Y + CORNER_RIGHT_Y);
+    background.at(BackgroundObject::BORDER_RIGHT).setSize({SIDE_BORDER_WIDTH, WINDOW_Y - HUD_Y - CORNER_RIGHT_Y});
     background.at(BackgroundObject::BORDER_RIGHT).setTexture(&m_engine->resourceMan.GetTexture("border_side.png"));
 
     // Set up left shield shape
@@ -788,12 +790,12 @@ void PlayState::LoadObjects()
 
     // Set up top shadow shape
     background.at(BackgroundObject::SHADOW_TOP).setPosition(CORNER_LEFT_X, HUD_Y + BORDER_TOP_Y);
-    background.at(BackgroundObject::SHADOW_TOP).setSize({WINDOW_X - CORNER_LEFT_X - CORNER_RIGHT_X, 20});
+    background.at(BackgroundObject::SHADOW_TOP).setSize({WINDOW_X - CORNER_LEFT_X - CORNER_RIGHT_X, TOP_BORDER_HEIGHT});
     background.at(BackgroundObject::SHADOW_TOP).setFillColor({0, 0, 0, 127});
 
     // Set up left shadow shape
-    background.at(BackgroundObject::SHADOW_LEFT).setPosition(20, HUD_Y + BORDER_TOP_Y + 20);
-    background.at(BackgroundObject::SHADOW_LEFT).setSize({20, WINDOW_Y - HUD_Y - BORDER_TOP_Y});
+    background.at(BackgroundObject::SHADOW_LEFT).setPosition(SIDE_BORDER_WIDTH, HUD_Y + BORDER_TOP_Y + SIDE_BORDER_WIDTH);
+    background.at(BackgroundObject::SHADOW_LEFT).setSize({SIDE_BORDER_WIDTH, WINDOW_Y - HUD_Y - BORDER_TOP_Y});
     background.at(BackgroundObject::SHADOW_LEFT).setFillColor({0, 0, 0, 127});
 
     // Set up background shape
