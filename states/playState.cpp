@@ -493,8 +493,6 @@ sf::Vector2f PlayState::CalculatePaddleReflectionVector(Paddle& mPaddle, Ball& m
     newBallVelocity.y = -mBall.GetSpeed() * cos(BOUNCE_ANGLE);
     newBallVelocity.x = (mBall.x() < mPaddle.x()) ? -newBallVelocity.x : newBallVelocity.x;
 
-    //std::cout << "sin: " << sin(BOUNCE_ANGLE) << ", cos: " << cos(BOUNCE_ANGLE) << std::endl;
-
     return newBallVelocity;
 }
 
