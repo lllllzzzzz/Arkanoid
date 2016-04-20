@@ -652,7 +652,6 @@ void PlayState::ApplyPowerup()
 
         // Player gets a new ball
         case 3:
-            //balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x() - balls.back().radius() / 2, m_player.GetPaddle().y() - 20});
             if (IsBallLaunched()) {
                 const sf::Vector2f NEW_BALL_VELOCITY = -balls.back().GetVelocity();
                 balls.emplace_back(m_engine, balls.back().GetPos());
