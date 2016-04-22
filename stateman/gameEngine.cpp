@@ -5,8 +5,6 @@
 
 //using namespace Arkanoid;
 
-//GameEngine GameEngine::m_GameEngine;
-
 GameEngine::GameEngine(const sf::Vector2f windowSize, const int fps, const std::string& windowTitle) :
     m_window{{windowSize.x, windowSize.y}, windowTitle, sf::Style::Titlebar | sf::Style::Close},
     m_windowSize{windowSize},
