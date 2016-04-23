@@ -410,7 +410,6 @@ void PlayState::NewGame()
 
     balls.clear();
     balls.emplace_back(m_engine, sf::Vector2f{m_engine->getWindowSize().x / 2, m_engine->getWindowSize().y - m_player.GetPaddle().GetPos().y - m_player.GetPaddle().GetSize().y});
-    //balls.front().SetPos({m_engine->getWindowSize().x, m_player.GetPaddle().top() - (balls.front().GetRadius() * 2) + 1});
 
     SetBallLaunched(false);
 
