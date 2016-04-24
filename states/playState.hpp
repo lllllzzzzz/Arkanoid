@@ -102,7 +102,7 @@
         };
 
         static PlayState m_PlayState;
-
+        
         GameEngine *m_engine;
 
         Player m_player;
@@ -113,16 +113,14 @@
         std::vector<Ball> balls;
         std::vector<Powerup> powerups;
         std::vector<Projectile> projectiles;
-
         std::vector<sf::RectangleShape> background;
         std::vector<sf::Sound> sounds;
         sf::Music backgroundMusic;
 
         int m_currentLevel;
         int m_highScore;
-
+        
         bool m_isGameOver;
-
         bool m_isSoundEnabled;
         bool m_isGameRunning;
         bool m_isBallLaunched;
