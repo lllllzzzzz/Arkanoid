@@ -12,7 +12,6 @@ public:
     ~ResourceManager();
 
     sf::Texture& GetTexture(const std::string& filename);
-    //sf::Texture& GetTile(const std::string& filename);
     sf::Font& GetFont(const std::string& filename);
     sf::SoundBuffer& GetSound(const std::string& filename);
 
@@ -23,8 +22,6 @@ private:
     //std::mutex TexturesMutex;
     std::unordered_map<std::string, sf::Font*> m_fonts;
     //std::mutex FontsMutex;
-    //std::unordered_map<std::string, sf::Texture*> m_tiles;
-    //std::mutex TilesMutex;
     std::unordered_map<std::string, sf::SoundBuffer*> m_sounds;
     //std::mutex SoundsMutex;
 
