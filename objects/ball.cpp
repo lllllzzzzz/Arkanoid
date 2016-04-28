@@ -1,7 +1,7 @@
 #include "ball.hpp"
 
 const sf::Color Ball::DEFAULT_COLOUR = sf::Color(0, 0, 0);
-const int Ball::DEFAULT_SPEED = 10;
+const int Ball::DEFAULT_SPEED = 9;
 const int Ball::DEFAULT_RADIUS = 7;
 const int Ball::SHADOW_OPACITY = 127;
 const int Ball::SLOW_DOWN_FACTOR = -2;
@@ -50,6 +50,11 @@ void Ball::SetPos(const sf::Vector2f newPosition) noexcept
 {
     shape.setPosition(newPosition);
     shadow.setPosition(newPosition.x + GetRadius() / 2, newPosition.y + GetRadius() / 2);
+}
+
+sf::Vector2f Ball::GetPos() const noexcept
+{
+    return {x(), y()};
 }
 
 void Ball::SetVelocity(const sf::Vector2f newVelocity) noexcept
