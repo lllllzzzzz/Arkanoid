@@ -94,6 +94,8 @@ void PlayState::Resume()
 
 void PlayState::HandleEvents()
 {
+    //backgroundMusic.play();
+
     //timePoint1 = std::chrono::high_resolution_clock::now();
 
     // Handle window events
@@ -408,6 +410,7 @@ void PlayState::NewGame()
 
     balls.clear();
     balls.emplace_back(m_engine, sf::Vector2f{m_engine->getWindowSize().x / 2, m_engine->getWindowSize().y - m_player.GetPaddle().GetPos().y - m_player.GetPaddle().GetSize().y});
+    //balls.front().SetPos({m_engine->getWindowSize().x, m_player.GetPaddle().top() - (balls.front().GetRadius() * 2) + 1});
 
     SetBallLaunched(false);
 
@@ -489,6 +492,8 @@ sf::Vector2f PlayState::CalculatePaddleReflectionVector(Paddle& mPaddle, Ball& m
     newBallVelocity.x = mBall.GetSpeed() * sin(BOUNCE_ANGLE);
     newBallVelocity.y = -mBall.GetSpeed() * cos(BOUNCE_ANGLE);
     newBallVelocity.x = (mBall.x() < mPaddle.x()) ? -newBallVelocity.x : newBallVelocity.x;
+
+    //std::cout << "sin: " << sin(BOUNCE_ANGLE) << ", cos: " << cos(BOUNCE_ANGLE) << std::endl;
 
     return newBallVelocity;
 }
@@ -649,6 +654,7 @@ void PlayState::ApplyPowerup()
 
         // Player gets a new ball
         case 3:
+            //balls.emplace_back(m_engine, sf::Vector2f{m_player.GetPaddle().x() - balls.back().radius() / 2, m_player.GetPaddle().y() - 20});
             if (IsBallLaunched()) {
                 const sf::Vector2f NEW_BALL_VELOCITY = -balls.back().GetVelocity();
                 balls.emplace_back(m_engine, balls.back().GetPos());

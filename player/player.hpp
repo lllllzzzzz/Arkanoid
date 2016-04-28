@@ -7,32 +7,32 @@
 class Player
 {
 public:
-    Player();
-    ~Player();
+	Player();
+	~Player();
 
-    void Init(GameEngine *game);
+	void Init(GameEngine *game);
 
-    void Reset();
+	void Reset();
 
-    Paddle& GetPaddle() { return m_paddle; }
+	Paddle& GetPaddle() { return m_paddle; }
 
-    void SetPoints(const int points) noexcept { m_points = points; }
+	void SetPoints(const int points) noexcept { m_points = points; }
     int GetPoints() const noexcept { return m_points; }
     void GainPoints(const int points) noexcept { m_points += points; }
 
-    void SetLives(const int lives) noexcept { m_lives = lives; }
+	void SetLives(const int lives) noexcept { m_lives = lives; }
     int GetLives() const noexcept { return m_lives; }
     int GainLives(const int lives) noexcept { return m_lives += lives; }
 
 private:
-    GameEngine *m_engine;
+	GameEngine *m_engine;
 
-    Paddle m_paddle;
+	Paddle m_paddle;
 
-    int m_points;
-    int m_lives;
+	int m_points;
+	int m_lives;
 
-    static const int DEFAULT_LIVES;
+	static const int DEFAULT_LIVES;
 };
 
 #endif // PLAYER_HPP
