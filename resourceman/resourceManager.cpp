@@ -1,5 +1,6 @@
 #include "resourceManager.hpp"
-//#include <iostream>
+
+#include <iostream>
 
 const std::string ResourceManager::RESOURCES_DIR = "data\\";
 const std::string ResourceManager::TEXTURES_DIR = "gfx\\";
@@ -51,6 +52,7 @@ sf::SoundBuffer& ResourceManager::GetSound(const std::string& filename)
     //std::lock_guard<std::mutex> lock(TexturesMutex);
     auto itr = m_sounds.find(filename);
     if (itr != m_sounds.end()) {
+        //std::cout << "loaded" << std::endl;
         return *itr->second;
     }
 

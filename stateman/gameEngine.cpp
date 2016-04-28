@@ -5,6 +5,8 @@
 
 //using namespace Arkanoid;
 
+//GameEngine GameEngine::m_GameEngine;
+
 GameEngine::GameEngine(const sf::Vector2f windowSize, const int fps, const std::string& windowTitle) :
     m_window{{windowSize.x, windowSize.y}, windowTitle, sf::Style::Titlebar | sf::Style::Close},
     m_windowSize{windowSize},
@@ -58,7 +60,7 @@ GameState* GameEngine::peekState()
 
 void GameEngine::Run()
 {
-    //HandleWindowEvents();
+    HandleWindowEvents();
     HandleEvents();
     Update();
     Draw();
@@ -66,18 +68,19 @@ void GameEngine::Run()
 
 void GameEngine::HandleWindowEvents()
 {
-    sf::Event event;
-    while (getWindow().pollEvent(event)) {
-        if (isWindowMoving()) {
-            getWindow().setPosition({sf::Mouse::getPosition().x - getWindowSize().x / 2, sf::Mouse::getPosition().y - getWindowSize().y / 2});
-        } if (event.type == sf::Event::MouseButtonPressed/* && event.MouseButton.Button == sf::Mouse::Left*/) {
-            moveWindow(true);
-        } else if (event.type == sf::Event::MouseButtonReleased/* && event.MouseButton.Button == sf::Mouse::Left*/) {
-            moveWindow(false);
-        } else if (event.type == sf::Event::Closed) {
-            Quit();
-        }
-    }
+    // Poll window events
+    //sf::Event event;
+    //while (getWindow().pollEvent(event)) {
+    //    if (isWindowMoving()) {
+    //        getWindow().setPosition({sf::Mouse::getPosition().x - getWindowSize().x / 2, sf::Mouse::getPosition().y - getWindowSize().y / 2});
+    //    } if (event.type == sf::Event::MouseButtonPressed/* && event.MouseButton.Button == sf::Mouse::Left*/) {
+    //        moveWindow(true);
+    //    } else if (event.type == sf::Event::MouseButtonReleased/* && event.MouseButton.Button == sf::Mouse::Left*/) {
+    //        moveWindow(false);
+    //    } else if (event.type == sf::Event::Closed) {
+    //        Quit();
+    //    }
+    //}
 }
 
 void GameEngine::HandleEvents()
