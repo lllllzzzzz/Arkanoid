@@ -39,3 +39,8 @@ float Rectangle::bottom() const noexcept
 {
     return y() + shape.getSize().y / 2.f;
 }
+
+void Rectangle::setPos(const int x, const int y)
+{
+    shape.setPosition(x, y);
+}

@@ -19,19 +19,19 @@ public:
 
     void Reset();
 
-    void update(/*const float mFT, */ const sf::Vector2f windowSize);
-    void setPos(const sf::Vector2f position) noexcept;
-    sf::Vector2f getPos() const noexcept { return {x(), y()}; }
-    void setSize(const sf::Vector2f size);
-    sf::Vector2f getSize() const noexcept { return m_size; }
-    void setSpeed(const int speed) noexcept;
-    int getSpeed() const noexcept;
+    void Update(/*const float mFT, */ const sf::Vector2f windowSize);
+    void SetPos(const sf::Vector2f position) noexcept;
+    sf::Vector2f GetPos() const noexcept { return {x(), y()}; }
+    void SetSize(const sf::Vector2f size);
+    sf::Vector2f GetSize() const noexcept { return m_size; }
+    void SetSpeed(const int speed) noexcept;
+    int GetSpeed() const noexcept;
 
     bool HasLaser() const noexcept { return m_hasLaser; }
     void SetLaserEnabled(const bool state) noexcept { m_hasLaser = state; }
 
-    bool IsExpanded() const noexcept { return getSize().x > DEFAULT_SIZE.x; }
-    bool IsShrunk() const noexcept { return getSize().x < DEFAULT_SIZE.x; }
+    bool IsExpanded() const noexcept { return GetSize().x > DEFAULT_SIZE.x; }
+    bool IsShrunk() const noexcept { return GetSize().x < DEFAULT_SIZE.x; }
 
     void SpeedUp() noexcept;
     void SlowDown() noexcept;

@@ -12,14 +12,14 @@ Object::~Object()
 
 void Object::SetPosition(const sf::Vector2f newPosition) noexcept
 {
-    m_position = newPosition;
+	m_position = newPosition;
     //shape.setPosition(newPosition);
     //shadow.setPosition({newPosition.x + GetSize().x / 2, newPosition.y + GetSize().y});
 }
 
 sf::Vector2f Object::GetPosition() const noexcept
 {
-    return m_position;
+	return m_position;
 }
 
 void Object::SetSize(const sf::Vector2f size) noexcept

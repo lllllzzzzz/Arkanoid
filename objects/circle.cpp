@@ -39,3 +39,8 @@ float Circle::bottom() const noexcept
 {
     return y() + shape.getRadius();
 }
+
+float Circle::radius() const noexcept
+{
+    return shape.getRadius();
+}

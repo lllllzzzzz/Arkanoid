@@ -1,78 +1,392 @@
-#include "brickGrid.hpp"
+#ifndef BRICK_GRID_HPP
+#define BRICK_GRID_HPP
 
-#include <SFML\Graphics.hpp>
+#include <vector>
+#include "brick.hpp"
 
-const int BrickGrid::NUMBER_BLOCKS_TO_MOVE_DOWN = 1;
-const sf::Vector2f BrickGrid::BRICK_SIZE = {40, 20};
-
-BrickGrid::BrickGrid(/*const sf::Vector2f position, const sf::Vector2f size*/) :
-    //m_position(position),
-    //m_size(size)
-    m_currentLevel(1)
+class BrickGrid
 {
+public:
+    BrickGrid(/*const sf::Vector2f position, const sf::Vector2f size*/);
+    ~BrickGrid();
 
-}
+    void Init(GameEngine *game);
 
-BrickGrid::~BrickGrid()
-{
+    void Update();
 
-}
+    void GenerateGrid(const int level);
+    void Clear() noexcept { m_bricks.clear(); }
+    void ResetGrid();
+    int GetNumberOfBricks() const noexcept { return m_bricks.size(); }
+    bool IsEmpty() const noexcept { return m_bricks.empty(); }
 
-void BrickGrid::Init(GameEngine *game)
-{
-    m_engine = game;
+    std::vector<Brick>& GetBricks() { return m_bricks; }
 
-    m_position = {20, m_engine->getWindowSize().y + 125};
-    m_size = {m_engine->getWindowSize().x - 40, m_engine->getWindowSize().y / 3};
-}
+    void MoveDown(/*const int numCells*/);
 
-void BrickGrid::Update()
-{
-    // Remove destroyed bricks from bricks vector
-    m_bricks.erase(
-        remove_if(begin(m_bricks), end(m_bricks),
-            [](const Brick& mBrick) { return mBrick.IsDestroyed(); }),
-        end(m_bricks)
-    );
-}
+private:
+    GameEngine *m_engine;
 
-void BrickGrid::GenerateGrid(const int level)
-{
-    if (level < 0 || level > levels.size()) {
-        return;
-    }
+    std::vector<Brick> m_bricks;
 
-    m_bricks.clear();
+    sf::Vector2f m_position;
+    sf::Vector2f m_size;
+    sf::Vector2f m_numBricks;
 
-    for (auto& gridCell : levels.at(level - 1)) {
-        m_bricks.emplace_back(
-            m_engine,
-            sf::Vector2f{(gridCell.x + 1) * BRICK_SIZE.x, (gridCell.y * BRICK_SIZE.y) + 125},
-            gridCell.colour,
-            0);
-    }
-}
+    int m_currentLevel;
 
-void BrickGrid::ResetGrid()
-{
-    m_bricks.clear();
+    static const int NUMBER_BLOCKS_TO_MOVE_DOWN;
+    static const sf::Vector2f BRICK_SIZE;
 
-    for (auto& gridCell : levels.at(m_currentLevel - 1)) {
-        m_bricks.emplace_back(
-            m_engine,
-            sf::Vector2f{(gridCell.x + 1) * BRICK_SIZE.x, (gridCell.y * BRICK_SIZE.y) + 125},
-            gridCell.colour,
-            0);
-    }
-}
+    template <typename T>
+    struct brickData {
+        T x;
+        T y;
+        sf::Color colour;
+    };
 
-void BrickGrid::MoveDown(/*const int numCells*/)
-{
-    //if (!numCells) {
-    //    return;
-    //}
+    std::vector<brickData<double>> currentLevel;
 
-    for (auto& brick : m_bricks) {
-        brick.SetPos({brick.x(), brick.y() + (brick.GetSize().y * NUMBER_BLOCKS_TO_MOVE_DOWN)});
-    }
-}
+    std::vector<brickData<double>> level1 = {
+        {1, 0, sf::Color::Green},
+        {2, 0, sf::Color::Green},
+        {3, 0, sf::Color::Green},
+        {4, 0, sf::Color::Green},
+        {5, 0, sf::Color::Green},
+        {6, 0, sf::Color::Green},
+        {7, 0, sf::Color::Green},
+        {8, 0, sf::Color::Green},
+        {9, 0, sf::Color::Green},
+
+        {1, 1, sf::Color::Green},
+        {2, 1, sf::Color::Green},
+        {3, 1, sf::Color::Green},
+        {4, 1, sf::Color::Green},
+        {5, 1, sf::Color::Green},
+        {6, 1, sf::Color::Green},
+        {7, 1, sf::Color::Green},
+        {8, 1, sf::Color::Green},
+        {9, 1, sf::Color::Green},
+
+        {1, 2, sf::Color::Blue},
+        {2, 2, sf::Color::Blue},
+        {3, 2, sf::Color::Blue},
+        {4, 2, sf::Color::Blue},
+        {5, 2, sf::Color::Blue},
+        {6, 2, sf::Color::Blue},
+        {7, 2, sf::Color::Blue},
+        {8, 2, sf::Color::Blue},
+        {9, 2, sf::Color::Blue},
+
+        {1, 3, sf::Color::Blue},
+        {2, 3, sf::Color::Blue},
+        {3, 3, sf::Color::Blue},
+        {4, 3, sf::Color::Blue},
+        {5, 3, sf::Color::Blue},
+        {6, 3, sf::Color::Blue},
+        {7, 3, sf::Color::Blue},
+        {8, 3, sf::Color::Blue},
+        {9, 3, sf::Color::Blue},
+
+        {1, 4, sf::Color::Red},
+        {2, 4, sf::Color::Red},
+        {3, 4, sf::Color::Red},
+        {4, 4, sf::Color::Red},
+        {5, 4, sf::Color::Red},
+        {6, 4, sf::Color::Red},
+        {7, 4, sf::Color::Red},
+        {8, 4, sf::Color::Red},
+        {9, 4, sf::Color::Red},
+
+        {1, 5, sf::Color::Red},
+        {2, 5, sf::Color::Red},
+        {3, 5, sf::Color::Red},
+        {4, 5, sf::Color::Red},
+        {5, 5, sf::Color::Red},
+        {6, 5, sf::Color::Red},
+        {7, 5, sf::Color::Red},
+        {8, 5, sf::Color::Red},
+        {9, 5, sf::Color::Red},
+    };
+
+    std::vector<brickData<double>> level2 = {
+        {0, 0, sf::Color::Blue},
+        {1, 0, sf::Color::Blue},
+        {2, 0, sf::Color::Blue},
+        {3, 0, sf::Color::Blue},
+        {4, 0, sf::Color::Blue},
+        {5, 0, sf::Color::Blue},
+        {6, 0, sf::Color::Blue},
+        {7, 0, sf::Color::Blue},
+        {8, 0, sf::Color::Blue},
+        {9, 0, sf::Color::Blue},
+        {10, 0, sf::Color::Blue},
+
+        {1, 1, sf::Color::Magenta},
+        {2, 1, sf::Color::Magenta},
+        {3, 1, sf::Color::Magenta},
+        {4, 1, sf::Color::Magenta},
+        {5, 1, sf::Color::Magenta},
+        {6, 1, sf::Color::Magenta},
+        {7, 1, sf::Color::Magenta},
+        {8, 1, sf::Color::Magenta},
+        {9, 1, sf::Color::Magenta},
+
+        {2, 2, sf::Color::Blue},
+        {3, 2, sf::Color::Blue},
+        {4, 2, sf::Color::Blue},
+        {5, 2, sf::Color::Blue},
+        {6, 2, sf::Color::Blue},
+        {7, 2, sf::Color::Blue},
+        {8, 2, sf::Color::Blue},
+
+        {3, 3, sf::Color::Cyan},
+        {4, 3, sf::Color::Cyan},
+        {5, 3, sf::Color::Cyan},
+        {6, 3, sf::Color::Cyan},
+        {7, 3, sf::Color::Cyan},
+
+        {4, 4, sf::Color::White},
+        {5, 4, sf::Color::White},
+        {6, 4, sf::Color::White},
+
+        {5, 5, sf::Color::Red},
+    };
+
+    std::vector<brickData<double>> level3 = {
+        {1, 0, sf::Color::Green},
+        {2, 0, sf::Color::Green},
+        {3, 0, sf::Color::Green},
+        {4, 0, sf::Color::Green},
+        {5, 0, sf::Color::Green},
+        {6, 0, sf::Color::Green},
+        {7, 0, sf::Color::Green},
+        {8, 0, sf::Color::Green},
+        {9, 0, sf::Color::Green},
+
+        {1, 1, sf::Color::Green},
+        {9, 1, sf::Color::Green},
+
+        {1, 2, sf::Color::Blue},
+        {3, 2, sf::Color::Blue},
+        {4, 2, sf::Color::Blue},
+        {5, 2, sf::Color::Blue},
+        {6, 2, sf::Color::Blue},
+        {7, 2, sf::Color::Blue},
+        {9, 2, sf::Color::Blue},
+
+        {1, 3, sf::Color::Blue},
+        {3, 3, sf::Color::Blue},
+        {4, 3, sf::Color::Blue},
+        {5, 3, sf::Color::Blue},
+        {6, 3, sf::Color::Blue},
+        {7, 3, sf::Color::Blue},
+        {9, 3, sf::Color::Blue},
+
+        {1, 4, sf::Color::Red},
+        {9, 4, sf::Color::Red},
+
+        {1, 5, sf::Color::Red},
+        {9, 5, sf::Color::Red},
+
+        {1, 5, sf::Color::Green},
+        {9, 5, sf::Color::Green},
+
+        {1, 5, sf::Color::Cyan},
+        {2, 5, sf::Color::Cyan},
+        {3, 5, sf::Color::Cyan},
+        {4, 5, sf::Color::Cyan},
+        {5, 5, sf::Color::Cyan},
+        {6, 5, sf::Color::Cyan},
+        {7, 5, sf::Color::Cyan},
+        {8, 5, sf::Color::Cyan},
+        {9, 5, sf::Color::Cyan},
+    };
+
+    std::vector<brickData<double>> level4 = {
+        {0, 0, sf::Color::Red},
+        {1, 0, sf::Color::Red},
+        {3, 0, sf::Color::Red},
+        {4, 0, sf::Color::Red},
+        {6, 0, sf::Color::Red},
+        {7, 0, sf::Color::Red},
+        {9, 0, sf::Color::Red},
+        {10, 0, sf::Color::Red},
+
+        {5, 2, sf::Color::Red},
+
+        {4, 3, sf::Color::White},
+        {5, 3, sf::Color::White},
+        {6, 3, sf::Color::White},
+
+        {3, 4, sf::Color::Cyan},
+        {4, 4, sf::Color::Cyan},
+        {5, 4, sf::Color::Cyan},
+        {6, 4, sf::Color::Cyan},
+        {7, 4, sf::Color::Cyan},
+
+        {2, 5, sf::Color::Blue},
+        {3, 5, sf::Color::Blue},
+        {4, 5, sf::Color::Blue},
+        {5, 5, sf::Color::Blue},
+        {6, 5, sf::Color::Blue},
+        {7, 5, sf::Color::Blue},
+        {8, 5, sf::Color::Blue},
+
+        {1, 6, sf::Color::Magenta},
+        {2, 6, sf::Color::Magenta},
+        {3, 6, sf::Color::Magenta},
+        {4, 6, sf::Color::Magenta},
+        {5, 6, sf::Color::Magenta},
+        {6, 6, sf::Color::Magenta},
+        {7, 6, sf::Color::Magenta},
+        {8, 6, sf::Color::Magenta},
+        {9, 6, sf::Color::Magenta},
+
+        {0, 7, sf::Color::Blue},
+        {1, 7, sf::Color::Blue},
+        {2, 7, sf::Color::Blue},
+        {3, 7, sf::Color::Blue},
+        {4, 7, sf::Color::Blue},
+        {5, 7, sf::Color::Blue},
+        {6, 7, sf::Color::Blue},
+        {7, 7, sf::Color::Blue},
+        {8, 7, sf::Color::Blue},
+        {9, 7, sf::Color::Blue},
+        {10, 7, sf::Color::Blue},
+    };
+
+    std::vector<brickData<double>> level5 = {
+        {1, 0, sf::Color::Blue},
+        {2, 0, sf::Color::Blue},
+        {3, 0, sf::Color::Blue},
+        {4, 0, sf::Color::Blue},
+        {5, 0, sf::Color::Blue},
+        {6, 0, sf::Color::Blue},
+        {7, 0, sf::Color::Blue},
+        {8, 0, sf::Color::Blue},
+        {9, 0, sf::Color::Blue},
+
+        {2, 1, sf::Color::Green},
+        {3, 1, sf::Color::Green},
+        {4, 1, sf::Color::Green},
+        {5, 1, sf::Color::Green},
+        {6, 1, sf::Color::Green},
+        {7, 1, sf::Color::Green},
+        {8, 1, sf::Color::Green},
+
+        {3, 2, sf::Color::Cyan},
+        {4, 2, sf::Color::Cyan},
+        {5, 2, sf::Color::Cyan},
+        {6, 2, sf::Color::Cyan},
+        {7, 2, sf::Color::Cyan},
+
+        {4, 3, sf::Color::Red},
+        {5, 3, sf::Color::Red},
+        {6, 3, sf::Color::Red},
+
+        {3, 4, sf::Color::Cyan},
+        {4, 4, sf::Color::Cyan},
+        {5, 4, sf::Color::Cyan},
+        {6, 4, sf::Color::Cyan},
+        {7, 4, sf::Color::Cyan},
+
+        {2, 5, sf::Color::Green},
+        {3, 5, sf::Color::Green},
+        {4, 5, sf::Color::Green},
+        {5, 5, sf::Color::Green},
+        {6, 5, sf::Color::Green},
+        {7, 5, sf::Color::Green},
+        {8, 5, sf::Color::Green},
+
+        {1, 6, sf::Color::Blue},
+        {2, 6, sf::Color::Blue},
+        {3, 6, sf::Color::Blue},
+        {4, 6, sf::Color::Blue},
+        {5, 6, sf::Color::Blue},
+        {6, 6, sf::Color::Blue},
+        {7, 6, sf::Color::Blue},
+        {8, 6, sf::Color::Blue},
+        {9, 6, sf::Color::Blue},
+    };
+
+    std::vector<brickData<double>> level6 = {
+        {1, 0, sf::Color::Red},
+        {2, 0, sf::Color::Red},
+        {3, 0, sf::Color::Red},
+        {4, 0, sf::Color::Red},
+        {6, 0, sf::Color::Red},
+        {7, 0, sf::Color::Red},
+        {8, 0, sf::Color::Red},
+        {9, 0, sf::Color::Red},
+
+        {1, 1, sf::Color::Red},
+        {2, 1, sf::Color::Red},
+        {3, 1, sf::Color::Red},
+        {4, 1, sf::Color::Red},
+        {6, 1, sf::Color::Red},
+        {7, 1, sf::Color::Red},
+        {8, 1, sf::Color::Red},
+        {9, 1, sf::Color::Red},
+
+        {1, 2, sf::Color::Blue},
+        {2, 2, sf::Color::Blue},
+        {3, 2, sf::Color::Blue},
+        {4, 2, sf::Color::Blue},
+        {6, 2, sf::Color::Blue},
+        {7, 2, sf::Color::Blue},
+        {8, 2, sf::Color::Blue},
+        {9, 2, sf::Color::Blue},
+
+        {1, 3, sf::Color::Blue},
+        {2, 3, sf::Color::Blue},
+        {3, 3, sf::Color::Blue},
+        {4, 3, sf::Color::Blue},
+        {6, 3, sf::Color::Blue},
+        {7, 3, sf::Color::Blue},
+        {8, 3, sf::Color::Blue},
+        {9, 3, sf::Color::Blue},
+
+        {1, 5, sf::Color::Cyan},
+        {2, 5, sf::Color::Cyan},
+        {3, 5, sf::Color::Cyan},
+        {4, 5, sf::Color::Cyan},
+        {6, 5, sf::Color::Cyan},
+        {7, 5, sf::Color::Cyan},
+        {8, 5, sf::Color::Cyan},
+        {9, 5, sf::Color::Cyan},
+
+        {1, 6, sf::Color::Cyan},
+        {2, 6, sf::Color::Cyan},
+        {3, 6, sf::Color::Cyan},
+        {4, 6, sf::Color::Cyan},
+        {6, 6, sf::Color::Cyan},
+        {7, 6, sf::Color::Cyan},
+        {8, 6, sf::Color::Cyan},
+        {9, 6, sf::Color::Cyan},
+
+        {1, 7, sf::Color::Magenta},
+        {2, 7, sf::Color::Magenta},
+        {3, 7, sf::Color::Magenta},
+        {4, 7, sf::Color::Magenta},
+        {6, 7, sf::Color::Magenta},
+        {7, 7, sf::Color::Magenta},
+        {8, 7, sf::Color::Magenta},
+        {9, 7, sf::Color::Magenta},
+
+        {1, 8, sf::Color::Magenta},
+        {2, 8, sf::Color::Magenta},
+        {3, 8, sf::Color::Magenta},
+        {4, 8, sf::Color::Magenta},
+        {6, 8, sf::Color::Magenta},
+        {7, 8, sf::Color::Magenta},
+        {8, 8, sf::Color::Magenta},
+        {9, 8, sf::Color::Magenta},
+    };
+
+    std::vector<std::vector<brickData<double>>> levels = {
+        level1, level2, level3, level4, level5, level6
+    };
+};
+
+#endif // BRICK_GRID_HPP

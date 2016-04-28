@@ -15,6 +15,7 @@ public:
     virtual float right() const noexcept;
     virtual float top() const noexcept;
     virtual float bottom() const noexcept;
+    virtual float radius() const noexcept;
 
     sf::CircleShape shape;
 };

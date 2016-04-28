@@ -17,8 +17,9 @@ public:
 
     void Draw();
 
-    void Update();
+    void Update(/*const float mFT, */);
     void SetPos(const sf::Vector2f newPosition) noexcept;
+    sf::Vector2f GetPos() const noexcept;
     int GetRadius() const noexcept;
     bool IsDestroyed() const noexcept;
 

@@ -5,9 +5,10 @@
 const int BrickGrid::NUMBER_BLOCKS_TO_MOVE_DOWN = 1;
 const sf::Vector2f BrickGrid::BRICK_SIZE = {40, 20};
 
-BrickGrid::BrickGrid(/*const sf::Vector2f position, const sf::Vector2f size*/)// :
+BrickGrid::BrickGrid(/*const sf::Vector2f position, const sf::Vector2f size*/) :
     //m_position(position),
     //m_size(size)
+    m_currentLevel(1)
 {
 
 }
@@ -30,7 +31,7 @@ void BrickGrid::Update()
     // Remove destroyed bricks from bricks vector
     m_bricks.erase(
         remove_if(begin(m_bricks), end(m_bricks),
-            [](const Brick& mBrick) { return mBrick.isDestroyed(); }),
+            [](const Brick& mBrick) { return mBrick.IsDestroyed(); }),
         end(m_bricks)
     );
 }
@@ -43,7 +44,7 @@ void BrickGrid::GenerateGrid(const int level)
 
     m_bricks.clear();
 
-    for (auto& gridCell : levels.at(level - /*1*/2)) {
+    for (auto& gridCell : levels.at(level - 1)) {
         m_bricks.emplace_back(
             m_engine,
             sf::Vector2f{(gridCell.x + 1) * BRICK_SIZE.x, (gridCell.y * BRICK_SIZE.y) + 125},
@@ -65,9 +66,13 @@ void BrickGrid::ResetGrid()
     }
 }
 
-void BrickGrid::MoveDown()
+void BrickGrid::MoveDown(/*const int numCells*/)
 {
+    //if (!numCells) {
+    //    return;
+    //}
+
     for (auto& brick : m_bricks) {
-        brick.setPos({brick.x(), brick.y() + (brick.GetSize().y * NUMBER_BLOCKS_TO_MOVE_DOWN)});
+        brick.SetPos({brick.x(), brick.y() + (brick.GetSize().y * NUMBER_BLOCKS_TO_MOVE_DOWN)});
     }
 }

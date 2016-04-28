@@ -32,10 +32,12 @@ Brick::~Brick()
 
 void Brick::Init(GameEngine *game)
 {
-    
+    //texture = m_engine->resourceMan.GetTexture("brick.png");
+
+    //shape.setTexture(&texture);
 }
 
-void Brick::setPos(const sf::Vector2f newPosition)
+void Brick::SetPos(const sf::Vector2f newPosition)
 {
     shape.setPosition(newPosition);
     shadow.setPosition({newPosition.x + GetSize().x / 2, newPosition.y + GetSize().y});
@@ -47,22 +49,22 @@ void Brick::Draw()
     m_engine->getWindow().draw(shape);
 }
 
-const bool Brick::isVisible() const noexcept
+const bool Brick::IsVisible() const noexcept
 {
     return m_isVisible;
 }
 
-void Brick::setVisibility(const bool isVisible) noexcept
+void Brick::SetVisibility(const bool isVisible) noexcept
 {
     m_isVisible = isVisible;
 }
 
-bool Brick::isDestroyed() const noexcept
+bool Brick::IsDestroyed() const noexcept
 {
     return m_isDestroyed;
 }
 
-void Brick::destroy() noexcept
+void Brick::Destroy() noexcept
 {
     m_isDestroyed = true;
 }
