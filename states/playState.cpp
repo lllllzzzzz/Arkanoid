@@ -4,10 +4,6 @@
 #include <iostream>
 //#include <chrono>
 
-//#ifdef _WIN32
-//#include <windows.h>
-//#endif
-
 #define M_PI (3.14159265359)
 
 //const float PlayState::ftStep = 1.f;
