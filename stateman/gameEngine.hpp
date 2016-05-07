@@ -6,7 +6,6 @@
 #include <SFML/Graphics.hpp>
 
 #include "..\resourceman\resourceManager.hpp"
-//#include "..\states\gameState.hpp"
 
 class GameState;
 
