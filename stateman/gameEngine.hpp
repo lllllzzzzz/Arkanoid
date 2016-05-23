@@ -38,9 +38,6 @@ class GameState;
         sf::RenderWindow& getWindow();
         sf::Vector2f getWindowSize() const noexcept;
         void setWindowSize(const sf::Vector2f newWindowSize) noexcept;
-        //static GameEngine* Instance() {
-        //    return &m_GameEngine;
-        //}
 
         ResourceManager resourceMan;
 
