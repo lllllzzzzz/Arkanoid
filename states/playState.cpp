@@ -322,13 +322,6 @@ void PlayState::Draw()
         balls.front().SetPos({m_player.GetPaddle().x() - balls.front().GetRadius() / 2, m_player.GetPaddle().y() - ((balls.front().GetRadius() * 2) + 5)});
     }
 
-    // Draw balls
-    //for (auto& ball : balls) {
-    //    if (!ball.IsDestroyed()) {
-    //        ball.Draw();
-    //    }
-    //}
-
     // Draw balls in reverse to fix bug where shadows appear on top
     // of the balls
     for (int i = balls.size() - 1; i >= 0; i--) {
@@ -336,13 +329,6 @@ void PlayState::Draw()
             balls.at(i).Draw();
         }
     }
-
-    // Draw powerups
-    //for (auto& powerup : powerups) {
-    //    if (!powerup.IsDestroyed()) {
-    //        powerup.Draw();
-    //    }
-    //}
 
     // Draw powerups in reverse to fix bug where shadows appear on top
     // of the powerups
