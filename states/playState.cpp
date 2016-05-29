@@ -90,8 +90,6 @@ void PlayState::Resume()
 
 void PlayState::HandleEvents()
 {
-    //backgroundMusic.play();
-
     //timePoint1 = std::chrono::high_resolution_clock::now();
 
     // Handle window events
