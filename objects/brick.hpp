@@ -29,8 +29,6 @@ public:
     bool IsDestroyed() const noexcept;
     void Destroy() noexcept;
 
-    //Sprite sprite;
-
     sf::RectangleShape shadow;
 
 private:
