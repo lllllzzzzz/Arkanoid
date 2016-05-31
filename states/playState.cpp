@@ -481,16 +481,16 @@ sf::Vector2f PlayState::CalculatePaddleReflectionVector(Paddle& mPaddle, Ball& m
 sf::Vector2f PlayState::CalculateBrickReflectionVector(Brick& mBrick, Ball& mBall)
 {
     // Calculate intersections of ball/brick
-    float overlapLeft{mBall.right() - mBrick.left()};
-    float overlapRight{mBrick.right() - mBall.left()};
-    float overlapTop{mBall.bottom() - mBrick.top()};
-    float overlapBottom{mBrick.bottom() - mBall.top()};
+    const float overlapLeft{mBall.right() - mBrick.left()};
+    const float overlapRight{mBrick.right() - mBall.left()};
+    const float overlapTop{mBall.bottom() - mBrick.top()};
+    const float overlapBottom{mBrick.bottom() - mBall.top()};
 
-    bool ballFromLeft(abs(overlapLeft) < abs(overlapRight));
-    bool ballFromTop(abs(overlapTop) < abs(overlapBottom));
+    const bool ballFromLeft(abs(overlapLeft) < abs(overlapRight));
+    const bool ballFromTop(abs(overlapTop) < abs(overlapBottom));
 
-    float minOverlapX{ballFromLeft ? overlapLeft : overlapRight};
-    float minOverlapY{ballFromTop ? overlapTop : overlapBottom};
+    const float minOverlapX{ballFromLeft ? overlapLeft : overlapRight};
+    const float minOverlapY{ballFromTop ? overlapTop : overlapBottom};
 
     sf::Vector2f newBallVelocity;
 
