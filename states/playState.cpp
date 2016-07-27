@@ -4,6 +4,10 @@
 #include <iostream>
 //#include <chrono>
 
+#ifdef _WIN32
+//#include <windows.h>
+#endif
+
 #define M_PI (3.14159265359)
 
 //const float PlayState::ftStep = 1.f;
@@ -90,6 +94,8 @@ void PlayState::Resume()
 
 void PlayState::HandleEvents()
 {
+    //backgroundMusic.play();
+
     //timePoint1 = std::chrono::high_resolution_clock::now();
 
     // Handle window events
@@ -320,6 +326,13 @@ void PlayState::Draw()
         balls.front().SetPos({m_player.GetPaddle().x() - balls.front().GetRadius() / 2, m_player.GetPaddle().y() - ((balls.front().GetRadius() * 2) + 5)});
     }
 
+    // Draw balls
+    //for (auto& ball : balls) {
+    //    if (!ball.IsDestroyed()) {
+    //        ball.Draw();
+    //    }
+    //}
+
     // Draw balls in reverse to fix bug where shadows appear on top
     // of the balls
     for (int i = balls.size() - 1; i >= 0; i--) {
@@ -327,6 +340,13 @@ void PlayState::Draw()
             balls.at(i).Draw();
         }
     }
+
+    // Draw powerups
+    //for (auto& powerup : powerups) {
+    //    if (!powerup.IsDestroyed()) {
+    //        powerup.Draw();
+    //    }
+    //}
 
     // Draw powerups in reverse to fix bug where shadows appear on top
     // of the powerups
@@ -375,6 +395,10 @@ void PlayState::Draw()
     lastFt = ft;*/
 }
 
+/*
+ * Starts a new game.
+ * This involves resetting the current game state (level, score etc) and generating a new grid.
+ */
 void PlayState::NewGame()
 {
     SetLevel(START_LEVEL);
@@ -400,10 +424,18 @@ void PlayState::NewGame()
     }
 }
 
+/*
+ * Handles the "Game Over" state.
+ * Called when the player beats a level.
+ */
 void PlayState::GameOver(bool playerWon) {
     hud.displayWinLose(playerWon);
 }
 
+/*
+ * Removes all of the player's powerups.
+ * Called when the player loses a life and gets a new paddle.
+ */
 void PlayState::RemovePowerups()
 {
     shield.SetEnabled(false);
@@ -411,6 +443,10 @@ void PlayState::RemovePowerups()
     m_player.GetPaddle().Reset();
 }
 
+/*
+ * Calculates bonus points based on several factors and adds to player score.
+ * Called when the player beats a level, before loading the next level.
+ */
 void PlayState::AddBonusPoints(const int level)
 {
     int bonusPoints = 0;
@@ -433,9 +469,14 @@ void PlayState::AddBonusPoints(const int level)
     m_player.GainPoints(bonusPoints);
 }
 
+/*
+ * Loads the given level.
+ * Powerups are reset and a new grid is generated.
+ * Called when the player beats a level and the next level is to be loaded.
+ */
 void PlayState::LoadLevel(const int level)
 {
-     GameOver(true);
+    GameOver(true);
 
     if (level < 1) {
         return;
@@ -460,6 +501,11 @@ void PlayState::LoadLevel(const int level)
     brickGrid.GenerateGrid(level);
 }
 
+/*
+ * Calculates the angle at which the given ball should reflect off of the paddle.
+ * The angle of reflection depends on the angle of incidence (i.e. the location the ball hit the paddle).
+ * Called when a ball collides with the paddle.
+ */
 sf::Vector2f PlayState::CalculatePaddleReflectionVector(Paddle& mPaddle, Ball& mBall)
 {
     // Calculate angle of reflection of the ball
@@ -478,19 +524,23 @@ sf::Vector2f PlayState::CalculatePaddleReflectionVector(Paddle& mPaddle, Ball& m
     return newBallVelocity;
 }
 
+/*
+ * Calculates the angle at which the given ball should reflect off of a brick.
+ * Called when a ball collides with a brick.
+ */
 sf::Vector2f PlayState::CalculateBrickReflectionVector(Brick& mBrick, Ball& mBall)
 {
     // Calculate intersections of ball/brick
-    const float overlapLeft{mBall.right() - mBrick.left()};
-    const float overlapRight{mBrick.right() - mBall.left()};
-    const float overlapTop{mBall.bottom() - mBrick.top()};
-    const float overlapBottom{mBrick.bottom() - mBall.top()};
+    float overlapLeft{mBall.right() - mBrick.left()};
+    float overlapRight{mBrick.right() - mBall.left()};
+    float overlapTop{mBall.bottom() - mBrick.top()};
+    float overlapBottom{mBrick.bottom() - mBall.top()};
 
-    const bool ballFromLeft(abs(overlapLeft) < abs(overlapRight));
-    const bool ballFromTop(abs(overlapTop) < abs(overlapBottom));
+    bool ballFromLeft(abs(overlapLeft) < abs(overlapRight));
+    bool ballFromTop(abs(overlapTop) < abs(overlapBottom));
 
-    const float minOverlapX{ballFromLeft ? overlapLeft : overlapRight};
-    const float minOverlapY{ballFromTop ? overlapTop : overlapBottom};
+    float minOverlapX{ballFromLeft ? overlapLeft : overlapRight};
+    float minOverlapY{ballFromTop ? overlapTop : overlapBottom};
 
     sf::Vector2f newBallVelocity;
 
@@ -506,19 +556,26 @@ sf::Vector2f PlayState::CalculateBrickReflectionVector(Brick& mBrick, Ball& mBal
     return newBallVelocity;
 }
 
-template <class T1, class T2>
-bool PlayState::IsIntersecting(T1& mA, T2& mB)
+/*
+ * Returns true if the two given objects are intersecting, else false.
+ * This template function is used for collision detection between paddle/balls/bricks.
+ */
+template <class T1, class T2> bool PlayState::IsIntersecting(T1& mA, T2& mB)
 {
     return mA.right() >= mB.left() && mA.left() <= mB.right()
         && mA.bottom() >= mB.top() && mA.top() <= mB.bottom();
 }
 
+/*
+ * Tests for collision between the paddle and a ball.
+ */
 void PlayState::TestCollision(Paddle& mPaddle, Ball& mBall)
 {
     if (!IsIntersecting(mPaddle, mBall)) {
         return;
     }
 
+    // Collision detected, so calculate the reflection vector for the ball.
     mBall.SetVelocity(CalculatePaddleReflectionVector(mPaddle, mBall));
 
     if (IsSoundEnabled()) {
@@ -526,6 +583,9 @@ void PlayState::TestCollision(Paddle& mPaddle, Ball& mBall)
     }
 }
 
+/*
+ * Tests for collision between the shield and a ball.
+ */
 void PlayState::TestCollision(Shield& mShield, Ball& mBall)
 {
     if (mBall.bottom() < mShield.top()) {
@@ -566,8 +626,7 @@ void PlayState::TestCollision(Brick& mBrick, Ball& mBall)
     }
 }
 
-void PlayState::TestCollision(Brick
-& mBrick, Projectile& mProjectile)
+void PlayState::TestCollision(Brick& mBrick, Projectile& mProjectile)
 {
     if (!IsIntersecting(mBrick, mProjectile)) {
         return;
