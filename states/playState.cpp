@@ -601,6 +601,9 @@ void PlayState::TestCollision(Shield& mShield, Ball& mBall)
     }
 }
 
+/*
+ * Tests for collision between a brick and a ball.
+ */
 void PlayState::TestCollision(Brick& mBrick, Ball& mBall)
 {
     if (!IsIntersecting(mBrick, mBall)) {
@@ -626,6 +629,9 @@ void PlayState::TestCollision(Brick& mBrick, Ball& mBall)
     }
 }
 
+/*
+ * Tests for collision between a brick and a projectile.
+ */
 void PlayState::TestCollision(Brick& mBrick, Projectile& mProjectile)
 {
     if (!IsIntersecting(mBrick, mProjectile)) {
@@ -642,6 +648,9 @@ void PlayState::TestCollision(Brick& mBrick, Projectile& mProjectile)
     }
 }
 
+/*
+ * Tests for collision between the paddle and a powerup.
+ */
 void PlayState::TestCollision(Paddle& mPaddle, Powerup& mPowerup)
 {
     if (!IsIntersecting(mPaddle, mPowerup)) {
@@ -657,6 +666,10 @@ void PlayState::TestCollision(Paddle& mPaddle, Powerup& mPowerup)
     ApplyPowerup();
 }
 
+/*
+ * Applies powerup effects to the player.
+ * The powerup type is randomly determined when the player collects a powerup.
+ */
 void PlayState::ApplyPowerup()
 {
     const int POWERUP_NUMBER = std::rand() % TOTAL_NUMBER_OF_POWERUPS;
