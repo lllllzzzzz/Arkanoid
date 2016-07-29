@@ -610,6 +610,7 @@ void PlayState::TestCollision(Brick& mBrick, Ball& mBall)
         return;
     }
 
+    // Currently there is only one brick type; may add more types later
     if (mBrick.GetType() == 0) {
         mBrick.Destroy();
     }
@@ -755,6 +756,9 @@ void PlayState::ApplyPowerup()
     }
 }
 
+/*
+ * Loads sound and background resources, then calls LoadObjects().
+ */
 void PlayState::LoadResources()
 {
     // Set up sounds vector
@@ -788,6 +792,9 @@ void PlayState::LoadResources()
     LoadObjects();
 }
 
+/*
+ * Sets up the game graphics.
+ */
 void PlayState::LoadObjects()
 {
     const int HUD_Y = hud.getScoreBackgroundHeight();
