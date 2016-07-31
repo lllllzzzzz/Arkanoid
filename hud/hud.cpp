@@ -58,6 +58,9 @@ void Hud::Init(GameEngine *game)
     winLoseBackgroundBorder.setPosition(m_engine->getWindowSize().x / 2 - 68, m_engine->getWindowSize().y / 2 - 28);
 }
 
+/*
+ * Displays the HUD.
+ */
 void Hud::displayHud(const int playerScore, const int highScore, const int numLives, const int level, const bool gameIsRunning)
 {
     m_engine->getWindow().draw(scoreBackground);
@@ -73,6 +76,9 @@ void Hud::displayHud(const int playerScore, const int highScore, const int numLi
     }
 }
 
+/*
+ * Displays the player score.
+ */
 void Hud::displayPlayerScore(const int playerScore)
 {
     text.setColor(PLAYER_SCORE_COLOUR);
@@ -81,6 +87,9 @@ void Hud::displayPlayerScore(const int playerScore)
     m_engine->getWindow().draw(text);
 }
 
+/*
+ * Displays the high score.
+ */
 void Hud::displayHighScore(const int highScore)
 {
     text.setColor(HIGH_SCORE_COLOUR);
@@ -89,6 +98,9 @@ void Hud::displayHighScore(const int highScore)
     m_engine->getWindow().draw(text);
 }
 
+/*
+ * Displays the current level.
+ */
 void Hud::displayLevel(const int level)
 {
     text.setColor(LEVEL_COLOUR);
